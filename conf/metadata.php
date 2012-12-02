@@ -5,6 +5,5 @@
  * @author Philipp A. Hartmann <pah@qo.cx>
  */
 
-
-//$meta['fixme'] = array('string');
+$meta['bibns'] = array('string');
 

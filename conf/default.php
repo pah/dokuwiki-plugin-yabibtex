@@ -5,4 +5,4 @@
  * @author Philipp A. Hartmann <pah@qo.cx>
  */
 
-//$conf['fixme']    = 'FIXME';
+$conf['bibns'] = 'bib';
