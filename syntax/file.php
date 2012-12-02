@@ -15,28 +15,24 @@ if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
 require_once DOKU_PLUGIN.'syntax.php';
 
-class syntax_plugin_yabibtex_main extends DokuWiki_Syntax_Plugin {
+class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
+{
     public function getType() {
-        return 'FIXME: container|baseonly|formatting|substition|protected|disabled|paragraphs';
+        return 'substition';
     }
 
     public function getPType() {
-        return 'FIXME: normal|block|stack';
+        return 'block';
     }
 
     public function getSort() {
-        return FIXME;
+        return 818;
     }
-
 
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('<FIXME>',$mode,'plugin_yabibtex_main');
-//        $this->Lexer->addEntryPattern('<FIXME>',$mode,'plugin_yabibtex_main');
+        //$this->Lexer->addSpecialPattern('{{bibliography>.+?}}',$mode,'plugin_yabibtex_file');
+        $this->Lexer->addSpecialPattern('<bibliography [^>]+>',$mode,'plugin_yabibtex_file');
     }
-
-//    public function postConnect() {
-//        $this->Lexer->addExitPattern('</FIXME>','plugin_yabibtex_main');
-//    }
 
     public function handle($match, $state, $pos, &$handler){
         $data = array();
