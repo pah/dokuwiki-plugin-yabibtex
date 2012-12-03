@@ -194,6 +194,13 @@ class Entry {
 		}
 	}
 
+	protected static function printCreators($list, $class) {
+		if( $list->isEmpty() )
+			return false;
+		print '<span class="'.$class.'">'.$list.'.</span> ';
+		return true;
+	}
+
 	protected static function printLink($entry,$field,&$usecomma) {
 		if (isset($entry[$field])) {
 			if( $field == 'doi' ) {
@@ -316,9 +323,7 @@ class ArticleEntry extends Entry {
 	public function printEntry() {
                 // TODO: add more styles (PAH)
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
     print '<span class="bibtexJournal">'.$e['journal'].'</span>';
 		if (isset($e['volume']) && isset($e['number'])) {
@@ -349,11 +354,8 @@ class ArticleEntry extends Entry {
 class BookEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->editors->isEmpty()) {
-			print '<span class="bibtexEditors">'.$this->editors.'.</span> ';
-		} elseif (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		if (!$this->printCreators($this->editors, 'bibtexEditors') )
+			$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		$this->printEdition($e, $usecomma);
@@ -375,9 +377,7 @@ class BookEntry extends Entry {
 class BookletEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		$this->printField($e, 'howpublished', $usecomma);
@@ -395,11 +395,8 @@ class BookletEntry extends Entry {
 class InBookEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->editors->isEmpty()) {
-			print '<span class="bibtexEditors">'.$this->editors.'.</span> ';
-		} elseif (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		if (!$this->printCreators($this->editors, 'bibtexEditors') )
+			$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		$this->printField($e, 'type', $usecomma);
@@ -423,16 +420,12 @@ class InBookEntry extends Entry {
 class InCollectionEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		if (isset($e['booktitle'])) {
 			print ' In ';
-			if (!$this->editors->isEmpty()) {
-				print '<span class="bibtexEditors">'.$this->editors.'.</span> ';
-			}
+			$this->printCreators($this->editors, 'bibtexEditors');
 			print '<span class="bibtexBooktitle">'.$e['booktitle'].'</span>.';
 		}
 		$this->printSeries($e, $usecomma);
@@ -453,16 +446,12 @@ class InCollectionEntry extends Entry {
 class ProceedingsPaperEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		if (isset($e['booktitle'])) {
 			print ' In ';
-			if (!$this->editors->isEmpty()) {
-				print '<span class="bibtexEditors">'.$this->editors.'.</span> ';
-			}
+			$this->printCreators($this->editors, 'bibtexEditors');
 			print '<span class="bibtexBooktitle">'.$e['booktitle'];
 			if (isset($e['series'])) {
 				print ' ('.$e['series'].')';
@@ -492,9 +481,7 @@ class ProceedingsPaperEntry extends Entry {
 class ManualEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		$this->printField($e, 'organization', $usecomma);
@@ -513,9 +500,7 @@ class ManualEntry extends Entry {
 class ThesisEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		$this->printField($e, 'type', $usecomma);
@@ -538,9 +523,7 @@ class PhdThesisEntry extends ThesisEntry {}
 class MiscellaneousEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		$this->printField($e, 'howpublished', $usecomma);
@@ -557,9 +540,7 @@ class MiscellaneousEntry extends Entry {
 class ProceedingsEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->editors->isEmpty()) {
-			print '<span class="bibtexEditors">'.$this->editors.'.</span> ';
-		}
+		$this->printCreators($this->editors, 'bibtexEditors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		if (isset($e['volume']) && isset($e['number'])) {
 			print ' '.$e['volume'].'('.$e['number'].').';
@@ -586,9 +567,7 @@ class ProceedingsEntry extends Entry {
 class TechnicalReportEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		if (isset($e['type'])) {
@@ -616,9 +595,7 @@ class TechnicalReportEntry extends Entry {
 class UnpublishedEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
-		if (!$this->authors->isEmpty()) {
-			print '<span class="bibtexAuthors">'.$this->authors.'.</span> ';
-		}
+		$this->printCreators($this->authors, 'bibtexAuthors');
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		$usecomma = false;
 		$this->printField($e, 'note', $usecomma);
