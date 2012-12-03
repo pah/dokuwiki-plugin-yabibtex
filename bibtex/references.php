@@ -32,8 +32,10 @@ class EntryCreator {
 	*/
 	function __toString() {
 		if ($this->given_name) {
-			$full_name = JText::sprintf('BIBTEX_NAME_FORMAT', $this->family_name, $this->given_name);
-			if (!$full_name) {  /* language string missing, default to Western name order */
+			$full_name = BibliographyParser::sprintf
+			             ('name_format', $this->family_name, $this->given_name);
+			if (!$full_name) {
+				/* language string missing, default to Western name order */
 				$full_name = $this->given_name.' '.$this->family_name;
 			}
 			return $full_name;
@@ -78,7 +80,7 @@ class EntryAuthorList extends EntryCreatorList {
 				for ($k = 1; $k < count($this->creators) - 1; $k++) {
 					$s .= ', '.$this->creators[$k];
 				}
-				$s .= ' '.JText::_('BIBTEX_AND').' '.end($this->creators);
+				$s .= ' '.BibliographyParser::_('and').' '.end($this->creators);
 				return $s;
 		}
 	}
@@ -94,13 +96,13 @@ class EntryEditorList extends EntryCreatorList {
 			case 0:
 				return '';
 			case 1:
-				return $this->creators[0].' ('.JText::_('BIBTEX_EDITOR').')';
+				return $this->creators[0].' ('.BibliographyParser::_('editor').')';
 			default:
 				$s = (string) $this->creators[0];
 				for ($k = 1; $k < count($this->creators) - 1; $k++) {
 					$s .= ', '.$this->creators[$k];
 				}
-				$s .= ' '.JText::_('BIBTEX_AND').' '.end($this->creators).' ('.JText::_('BIBTEX_EDITORS').')';
+				$s .= ' '.BibliographyParser::_('and').' '.end($this->creators).' ('.BibliographyParser::_('editors').')';
 				return $s;
 		}
 	}
@@ -187,7 +189,7 @@ class Entry {
 	private static function translateOrdinal(&$entry, $field) {
 		if (isset($entry[$field])) {
 			if (($value = get_ordinal_standard_name($entry[$field])) !== false) {
-				$entry[$field] = JText::_($value);
+				$entry[$field] = BibliographyParser::_($value);
 			}
 		}
 	}
@@ -223,14 +225,16 @@ class Entry {
 		}
 	}
 	
-	private static function printFormattedField($entry, $field, $formatkey, $stringkey, &$usecomma) {
+	private static function printFormattedField($entry, $field, &$usecomma) {
 		if (isset($entry[$field])) {
+			$stringkey = $field;
+			$formatkey = $field.'_format';
 			if ($usecomma) {
 				print ', ';
-				JText::printf($formatkey, $entry[$field], JText::_($stringkey));
+				BibliographyParser::printf($formatkey, $entry[$field], BibliographyParser::_($stringkey));
 			} else {
 				print ' ';
-				print ucfirst(JText::sprintf($formatkey, $entry[$field], JText::_($stringkey)));
+				print ucfirst(BibliographyParser::sprintf($formatkey, $entry[$field], BibliographyParser::_($stringkey)));
 			}
 			$usecomma = true;
 		}
@@ -238,30 +242,30 @@ class Entry {
 
 	protected static function printSeries($entry, &$usecomma) {
 		Entry::translateOrdinal($entry, 'series');
-		Entry::printFormattedField($entry, 'series', 'BIBTEX_SERIES_FORMAT', 'BIBTEX_SERIES', $usecomma);
+		Entry::printFormattedField($entry, 'series',  $usecomma);
 	}
 
 	protected static function printEdition($entry, &$usecomma) {
 		Entry::translateOrdinal($entry, 'edition');
-		Entry::printFormattedField($entry, 'edition', 'BIBTEX_EDITION_FORMAT', 'BIBTEX_EDITION', $usecomma);
+		Entry::printFormattedField($entry, 'edition', $usecomma);
 	}
 
 	protected static function printVolume($entry, &$usecomma) {
-		Entry::printFormattedField($entry, 'volume', 'BIBTEX_VOLUME_FORMAT', 'BIBTEX_VOLUME', $usecomma);
+		Entry::printFormattedField($entry, 'volume',  $usecomma);
 	}
 
 	protected static function printNumber($entry, &$usecomma) {
-		Entry::printFormattedField($entry, 'number', 'BIBTEX_NUMBER_FORMAT', 'BIBTEX_NUMBER', $usecomma);
+		Entry::printFormattedField($entry, 'number',  $usecomma);
 	}
 
 	protected static function printChapter($entry, &$usecomma) {
-		Entry::printFormattedField($entry, 'chapter', 'BIBTEX_CHAPTER_FORMAT', 'BIBTEX_CHAPTER', $usecomma);
+		Entry::printFormattedField($entry, 'chapter', $usecomma);
 	}
 
 	protected static function printPages($entry, &$usecomma) {
 		if (isset($entry['pages'])) {
 			print $usecomma ? ', ' : ' ';
-			JText::printf('BIBTEX_PAGERANGE_FORMAT', $entry['pages'], ctype_digit($entry['pages']) ? JText::_('BIBTEX_PAGE') : JText::_('BIBTEX_PAGES'));
+			BibliographyParser::printf('pagerange_format', $entry['pages'], ctype_digit($entry['pages']) ? BibliographyParser::_('page') : BibliographyParser::_('pages'));
 			$usecomma = true;
 		}
 	}
@@ -270,32 +274,15 @@ class Entry {
 		if (isset($entry['year'])) {
 			print $usecomma ? ', ' : ' ';
 			if (isset($entry['month']) && ($month = get_month_standard_name($entry['month'])) !== false) {
-				JText::printf('BIBTEX_DATE_FORMAT_YEARMONTH', $entry['year'], JText::_($month));
+				BibliographyParser::printf('date_format_yearmonth', $entry['year']
+				                          , BibliographyParser::_($month) );
 			} else {
-				JText::printf('BIBTEX_DATE_FORMAT_YEAR', $entry['year']);
+				BibliographyParser::printf('date_format_year', $entry['year']);
 			}
 			$usecomma = true;
 		}
 	}
 	
-	protected static function printUrl($entry, &$usecomma) {
-		if (isset($entry['url'])) {
-			$urlpattern =
-				'(?:(?:ht|f)tps?://|~\/|\/)?'.  // protocol
-				'(?:\w+:\w+\x40)?'.  // username and password, \x40 = @
-				'(?:(?:[-\w]+\.)+(?:com|org|net|gov|mil|biz|info|mobi|name|aero|jobs|museum|travel|[a-z]{2}))'.  // domain
-				'(?::[\d]{1,5})?'.  // port
-				'(?:(?:(?:\/(?:[-\w~!$+|.,=]|%[a-f\d]{2})+)+|\/)+|\?|#)?'.  // path
-				'(?:(?:\?(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)(?:&(?:[-\w~!$+|.,*:]|%[a-f\d{2}])+=?(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)*)*'.  // query
-				'(?:#(?:[-\w~!$+|.,*:=]|%[a-f\d]{2})*)?';  // anchor
-			if (preg_match('@'.$urlpattern.'@', $entry['url'])) {
-				print $usecomma ? ', ' : ' ';
-				print '<a href="'.$entry['url'].'">URL</a>';
-				$usecomma = true;
-			}
-		}
-	}
-
 	/**
 	* Outputs a single raw BibTeX entry.
 	* @param entry An associative array representing a parsed BibTeX entry returned by BibTexParser.
@@ -647,4 +634,33 @@ class UnpublishedEntry extends Entry {
 * Base class for bibliography parsers.
 */
 class BibliographyParser {
+
+	/** localization array -- initialized from helper plugin */
+	public static $lang = NULL;
+	/** configuration array -- initialized from helper plugin */
+	public static $conf = NULL;
+
+	public static function _( $str ) {
+		if( !empty(BibliographyParser::$lang[$str]) )
+			$str=BibliographyParser::$lang[$str];
+		return $str;
+	}
+
+	public static function sprintf( $format ) {
+		$args = func_get_args();
+		if (count($args) > 0) {
+			$args[0] = BibliographyParser::$lang[$args[0]];
+			call_user_func_array('sprintf', $args);
+		}
+		return '';
+	}
+
+	public static function printf( $format ) {
+		$args = func_get_args();
+		if (count($args) > 0) {
+			$args[0] = BibliographyParser::$lang[$args[0]];
+			call_user_func_array('printf', $args);
+		}
+	}
+
 }
