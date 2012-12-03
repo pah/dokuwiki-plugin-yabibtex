@@ -65,7 +65,7 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
         $bt =& plugin_load('helper','yabibtex');
         if(!$bt) return false;
 
-        $data['parsed'] = $bt->loadString($data['bibtex']);
+        $bt->loadString($data['bibtex']);
 
 //  if(!plugin_isdisabled('tag')) {
 //            $tag =& plugin_load('helper', 'tag');
@@ -73,6 +73,7 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
 //        }
 
         $body = '<code bibtex>'.$data['bibtex'].'</code>';
+        $renderer->doc.=$bt->renderBibTeX();
         $renderer->doc.=$bt->render( $body );
         return true;
     }

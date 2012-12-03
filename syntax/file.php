@@ -13,6 +13,7 @@ if (!defined('DOKU_LF')) define('DOKU_LF', "\n");
 if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
+require_once DOKU_INC.'inc/infoutils.php';
 require_once DOKU_PLUGIN.'syntax.php';
 
 class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
@@ -35,13 +36,68 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
     }
 
     public function handle($match, $state, $pos, &$handler){
-        $data = array();
 
-        return $data;
+      $data = array();
+      $opts = trim(substr( $match, strlen('<bibliography '),-1));
+      $opts = preg_replace(array('/[[:blank:]]+/', '/\s+/'), " ", $opts);
+      $optv = explode( ' ', $opts );
+
+      $first_plain=false;
+      foreach( $optv as $v ) {
+        $m = array();
+        if( preg_match( '/([[:alnum:]+_-]+)(?:=(.+))?$/', $v, $m ) ) {
+          if(empty($m[2])) {
+            if(!$first_plain) {
+              $m[2] = $m[1];
+              $m[1] = 'file';
+            } else {
+              $m[2] = TRUE;
+            }
+            $first_plain=true;
+          }
+          $data[$m[1]] = $m[2];
+        }
+      }
+
+      if( empty($data['file']) ) {
+        msg( 'BibTeX error: No bibliography file given! (\''.$opts.'\')', -1 );
+        return false;
+      }
+
+      $ns = $this->getConf('bibns');
+      $data['file'] = cleanID($ns.':'.$data['file']);
+
+      if(!page_exists($data['file'])) {
+        msg( 'BibTeX error: Bibliography not found \''
+             .$data['file'].'\'', -1 );
+      }
+
+      return $data;
     }
 
     public function render($mode, &$renderer, $data) {
+
+        if(empty($data))     return false;
+
+        if($mode == 'metadata' ) {
+          // add file dependency for caching
+          $renderer->meta['relation']['haspart'][$data['file']]
+            = @file_exists(wikiFN($data['file']));
+        }
+
         if($mode != 'xhtml') return false;
+
+        $bt =& plugin_load('helper','yabibtex');
+        if(!$bt) return false;
+
+        if(!page_exists($data['file'])) {
+          msg( 'BibTeX error: Bibliography not found \''
+             .$data['file'].'\'', -1 );
+          return true;
+        }
+
+        $bt->loadFile(wikiFN($data['file']));
+        $renderer->doc.=$bt->renderBibTeX();
 
         return true;
     }
