@@ -10,9 +10,9 @@
 */
 
 // no direct access
-defined( '_JEXEC' ) or die( 'Restricted access' );
+defined( 'DOKU_PLUGIN_YABIBTEX' ) or die( 'Restricted access' );
 
-require_once JPATH_PLUGINS.DIRECTORY_SEPARATOR.'content'.DIRECTORY_SEPARATOR.'bibtex'.DIRECTORY_SEPARATOR.'latex.php';
+require_once DOKU_PLUGIN_YABIBTEX.'bibtex/latex.php';
 
 /**
 * Creator (i.e. author or editor) of a piece in a bibliography entry.

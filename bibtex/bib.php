@@ -57,6 +57,19 @@ class BibTexParser extends BibliographyParser {
 		return $entries;
 	}
 
+	public static function readString($string) {
+		$entry_parser = new ParseEntries();
+		$entry_parser->loadBibtexString($string);
+		$entry_parser->extractEntries();
+		list($bibtex_preamble, $bibtex_strings, $bibtex_entries, $bibtex_undefined_strings) = $entry_parser->returnArrays();
+		$entries = array();
+		foreach ($bibtex_entries as $bibtex_entry) {
+			$entries[$bibtex_entry['bibtexCitation']] = $bibtex_entry;
+		}
+		return $entries;
+	}
+
+
 	/**
 	* Parses raw BibTeX entries into Entry class objects.
 	*/

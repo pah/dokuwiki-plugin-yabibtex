@@ -1,7 +1,7 @@
 <?php
 /**
 * @file
-* @brief    BibTeX bibliography formatter Joomla plug-in LaTeX and BibTeX utility functions
+* @brief    BibTeX bibliography formatter LaTeX and BibTeX utility functions
 * @author   Levente Hunyadi
 * @version  1.1.1
 * @remarks  Copyright (C) 2009-2011 Levente Hunyadi
@@ -10,11 +10,11 @@
 */
 
 // no direct access
-defined( '_JEXEC' ) or die( 'Restricted access' );
+defined( 'DOKU_PLUGIN_YABIBTEX' ) or die( 'Restricted access' );
 
 /**
-* Encapsulates an accented letter and its ANSI LaTeX representation.
-*/
+ * Encapsulates an accented letter and its ANSI LaTeX representation.
+ */
 class Letter {
 	private $upper;
 	private $lower;

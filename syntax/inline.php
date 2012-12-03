@@ -65,7 +65,9 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
         $bt =& plugin_load('helper','yabibtex');
         if(!$bt) return false;
 
-//        if(!plugin_isdisabled('tag')) {
+        $data['parsed'] = $bt->loadString($data['bibtex']);
+
+//  if(!plugin_isdisabled('tag')) {
 //            $tag =& plugin_load('helper', 'tag');
 //            $entries = $tag->tagRefine($entries, $refine);
 //        }
