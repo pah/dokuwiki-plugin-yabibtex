@@ -562,13 +562,13 @@ class ProceedingsEntry extends Entry {
 		}
 		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
 		if (isset($e['volume']) && isset($e['number'])) {
-			print ' '.$e['volume'].'('.$e['number'].')';
+			print ' '.$e['volume'].'('.$e['number'].').';
 		} elseif (isset($e['volume'])) {
 			print ' '.$e['volume'];
+			print '.';
 		} elseif (isset($e['number'])) {
-			print ' ('.$e['number'].')';
+			print ' ('.$e['number'].').';
 		}
-		print '.';
 		$usecomma = false;
 		$this->printField($e, 'organization', $usecomma);
 		$this->printField($e, 'publisher', $usecomma);
