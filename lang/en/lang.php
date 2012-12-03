@@ -18,6 +18,8 @@ $lang['chapter'] = 'chapter';
 $lang['page']    = 'page';
 $lang['pages']   = 'pages';
 
+$lang['abstract'] = "Abstract";
+
 $lang['name_format']              = '%2$s %1$s';
 $lang['name_format_surnamefirst'] = '%1$s, %2$s';
 $lang['edition_format']           = '%1$s %2$s';

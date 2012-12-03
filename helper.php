@@ -20,16 +20,19 @@ if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 if (!defined('DOKU_PLUGIN_YABIBTEX'))
   define('DOKU_PLUGIN_YABIBTEX',DOKU_PLUGIN.'yabibtex/');
 
-require_once DOKU_INC.'inc/infoutils.php';
 require_once DOKU_PLUGIN.'syntax.php';
-
-require_once DOKU_PLUGIN_YABIBTEX.'bibtex/references.php';
+require_once DOKU_INC.'inc/infoutils.php';
 
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
     var $namespace  = '';      // namespace tag links point to
 
     var $sort       = '';      // sort key
+
+    var $data       = array(); // handle to loaded entries
+
+    var $show_raw_bibtex = false;
+    var $show_abstract   = false;
 
     /**
      * Constructor gets default preferences and language strings
@@ -54,14 +57,42 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     {
         $bibtex_entries = BibTexParser::read($filename);
         $entries = BibTexParser::parse($bibtex_entries);
-        return array($bibtex_entries, $entries);
+        $this->data = array($bibtex_entries, $entries);
+        return $this->data;
     }
 
     public function loadString( $string )
     {
         $bibtex_entries = BibTexParser::readString($string);
         $entries = BibTexParser::parse($bibtex_entries);
-        return array($bibtex_entries, $entries);
+        $this->data = array($bibtex_entries, $entries);
+        return $this->data;
+    }
+
+    /**
+     * Produces a formatted BibTeX list.
+     */
+    public function renderBibTeX() {
+
+        if( empty($this->data) )
+          return '';
+
+        ob_start();
+
+        print '<dl class="bibtexList">'.DOKU_LF;
+        foreach ( $this->data[1] as $entry) {
+          $custom_text =
+            ($this->show_raw_bibtex)
+              ? Entry::getRaw(
+                  $this->data[0][$entry->citation] )
+              : false;
+
+          print '<dd>';
+          $entry->printFormatted( $custom_text, $this->show_abstract );
+          print '</dd>'.DOKU_LF;
+        }
+        print '</dl>'.DOKU_LF;
+        return ob_get_clean();
     }
 }
 

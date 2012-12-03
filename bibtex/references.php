@@ -169,15 +169,25 @@ class Entry {
 	* Produces a formatted bibliography entry for HTML output.
 	* @return A human-readable bibliography reference.
 	*/
-	public function printFormatted($raw_bibtex = false, $raw_caption = false) {
-		$id = get_class($this).'-'.preg_replace('/[^A-Za-z0-9_-]/', '_', $this->citation);
+	public function printFormatted( $raw_bibtex = false
+	                              , $with_abstract = false)
+	{
+		$id = get_class($this).'-'
+		     .preg_replace('/[^A-Za-z0-9_-]/', '_', $this->citation);
 		print '<div class="bibtexEntry" id="'.$id.'">';
 		print '<p>';
 		$this->printEntry();
 		if ($raw_bibtex) {
-			print ' [<a href="#" class="bibtexLink">'.($raw_caption ? $raw_caption : 'bib').'</a>]';
+			print ' [<a href="#" title="Show BibTeX source" class="bibtexLink">bib</a>]';
+		}
+		if ($with_abstract && !empty($this->fields['abstract'])) {
+			print ' [<a href="#" title="Show abstract" class="folded bibtexLink">abstract</a>]';
 		}
 		print '</p>';
+
+		if ($with_abstract)
+			$this->printAbstract($this->fields);
+
 		if ($raw_bibtex) {
 			print '<pre class="bibtexCode">';
 			print $raw_bibtex;
@@ -287,6 +297,15 @@ class Entry {
 				BibliographyParser::printf('date_format_year', $entry['year']);
 			}
 			$usecomma = true;
+		}
+	}
+
+	protected static function printAbstract( $entry ) {
+		if (isset($entry['abstract'])) {
+			print '<div class="bibtexAbstract">'
+			     .'<h1>'.BibliographyParser::_('abstract').'</h1>'
+			     .'<p>'.latex2plain($entry['abstract']).'</p>'
+			     .'</div>';
 		}
 	}
 	
