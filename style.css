@@ -1,0 +1,44 @@
+
+dd.bibtexList
+{
+  margin-left: 1em;
+}
+
+div.bibtexEntry p
+{
+  margin: 0.5em;
+}
+
+div.bibtexEntry .bibtexAbstract h1
+{
+  font-size: small;
+  padding-left: 0.5em;
+}
+
+div.bibtexEntry .bibtexAbstract p
+{
+  text-align: justify;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+div.bibtexEntry .bibtexAuthors,
+div.bibtexEntry .bibtexEditors
+{
+}
+
+div.bibtexEntry .bibtexTitle
+{
+  font-weight: bold;
+}
+
+div.bibtexEntry .bibtexJournal,
+div.bibtexEntry .bibtexBooktitle
+{
+  font-style: italic;
+}
+
+div.bibtexEntry pre.bibtexCode
+{
+  overflow-x: auto;
+}
