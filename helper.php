@@ -37,12 +37,17 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     function helper_plugin_yabibtex() {
         global $ID;
 
+        require_once(DOKU_PLUGIN_YABIBTEX.'bibtex/references.php');
+        require_once(DOKU_PLUGIN_YABIBTEX.'bibtex/bib.php');
+        $this->setupLocale();
+        $this->loadConfig();
+
+        BibliographyParser::$lang =& $this->lang;
+        BibliographyParser::$conf =& $this->conf;
+
         $this->bibns = $this->getConf('bibns');
         if (!$this->bibns) $this->bibns = getNS($ID);
         $this->sort = $this->getConf('sortkey');
-
-        require_once(DOKU_PLUGIN_YABIBTEX.'bibtex/bib.php');
-        dbg("loaded");
     }
 
     public function loadFile( $filename )
