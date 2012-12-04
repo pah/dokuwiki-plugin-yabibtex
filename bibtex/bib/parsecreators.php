@@ -106,12 +106,12 @@ class PARSECREATORS
 			else if(preg_match("/[a-zA-Z]{2,}/", trim($value)))
 				$firstnameArray[] = trim($value);
 			else
-				$initialsArray[] = str_replace(".", " ", trim($value));
+				$initialsArray[] = /* str_replace(".", " ",*/ trim($value); /*);*/
 		}
 		if(isset($initialsArray))
 		{
 			foreach($initialsArray as $initial)
-				$initials .= ' ' . trim($initial);
+				$initials .= trim($initial).' ';
 		}
 		if(isset($firstnameArray))
 			$firstname = join(" ", $firstnameArray);
