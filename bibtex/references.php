@@ -183,21 +183,21 @@ class Entry {
 		print '<div class="bibtexEntry" id="'.$id.'">';
 		print '<p>';
 		$this->printEntry();
-		if ($raw_bibtex) {
-			print ' [<a href="#" title="Show BibTeX source" class="bibtexLink">bib</a>]';
-		}
 		if ($with_abstract && !empty($this->fields['abstract'])) {
-			print ' [<a href="#" title="Show abstract" class="folded bibtexLink">abstract</a>]';
+			print '<a href="#bibtexAbstract_'.$id.'" title="Show abstract" class="bibtexLink folder">Abstract</a>';
+		}
+		if ($raw_bibtex) {
+			print '<a href="#bibtexCode_'.$id.'" title="Show BibTeX source" class="bibtexLink folder">BibTeX</a>';
 		}
 		print '</p>';
 
 		if ($with_abstract)
-			$this->printAbstract($this->fields);
+			$this->printAbstract($id, $this->fields);
 
 		if ($raw_bibtex) {
-			print '<pre class="bibtexCode">';
+			print '<div class="bibtexCode folded hidden" id="bibtexCode_'.$id.'">';
 			print $raw_bibtex;
-			print '</pre>';
+			print '</div>';
 		}
 		print '</div>';
 	}
@@ -225,8 +225,8 @@ class Entry {
 			if ($usecomma) {
 				print ', ';
 			}
-			print ' [<a class="bibtexLink" target="_blank" href="'
-			      .$entry[$field].'">'.$field.'</a>]';
+			print '<a class="bibtexLink urlextern" target="_blank" href="'
+			      .$entry[$field].'">'.$field.'</a>';
 			$usecomma = false;
 		}
 	}
@@ -306,9 +306,10 @@ class Entry {
 		}
 	}
 
-	protected static function printAbstract( $entry ) {
+	protected static function printAbstract( $id, $entry ) {
 		if (isset($entry['abstract'])) {
-			print '<div class="bibtexAbstract">'
+			print '<div class="bibtexAbstract folded hidden" '.
+			           'id="bibtexAbstract_'.$id.'">'
 			     .'<h1>'.BibliographyParser::_('abstract').'</h1>'
 			     .'<p>'.latex2plain($entry['abstract']).'</p>'
 			     .'</div>';

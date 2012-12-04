@@ -32,7 +32,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     var $data       = array(); // handle to loaded entries
 
     var $show_raw_bibtex = true;
-    var $show_abstract   = false;
+    var $show_abstract   = true;
 
     /**
      * Constructor gets default preferences and language strings
@@ -130,12 +130,14 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
         print '<dl class="bibtexList">'.DOKU_LF;
         foreach ( $this->data[1] as $entry) {
-          $custom_text =
-            ($this->show_raw_bibtex)
-              ? Entry::getRaw(
-                  $this->data[0][$entry->citation] )
+          $bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
+                                     , trim($entry->citation) ).'.bib';
+          $custom_text = ($this->show_raw_bibtex)
+              ? $this->render( '<code bibtex>' // '.$bibfilename.'>'
+                .Entry::getRaw(
+                   $this->data[0][$entry->citation] )
+                .'</code>' )
               : false;
-
           print '<dd>';
           $entry->printFormatted( $custom_text, $this->show_abstract );
           print '</dd>'.DOKU_LF;

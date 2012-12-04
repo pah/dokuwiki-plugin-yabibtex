@@ -7,19 +7,14 @@ dd.bibtexList
 div.bibtexEntry p
 {
   margin: 0.5em;
-}
-
-div.bibtexEntry .bibtexAbstract h1
-{
-  font-size: small;
-  padding-left: 0.5em;
-}
-
-div.bibtexEntry .bibtexAbstract p
-{
   text-align: justify;
-  padding-left: 0.5em;
-  padding-right: 0.5em;
+}
+
+div.bibtexEntry a.bibtexLink:before {
+  content: "[";
+}
+div.bibtexEntry a.bibtexLink:after {
+  content: "]";
 }
 
 div.bibtexEntry .bibtexAuthors,
@@ -38,7 +33,26 @@ div.bibtexEntry .bibtexBooktitle
   font-style: italic;
 }
 
-div.bibtexEntry pre.bibtexCode
+div.bibtexEntry .bibtexCode
 {
-  overflow-x: auto;
+  margin-left:  0.5em;
+  margin-right: 0.5em;
+  margin-bottom: -1em;
+}
+
+div.bibtexEntry .bibtexAbstract {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+div.bibtexEntry .bibtexAbstract h1
+{
+  font-size: small;
+  padding-left: 0.5em;
+}
+
+div.bibtexEntry .bibtexAbstract p
+{
+  text-align: justify;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
 }
