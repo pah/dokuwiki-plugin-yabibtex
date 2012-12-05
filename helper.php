@@ -27,30 +27,35 @@ function yabibtex_field_sorter($keys)
 {
   $keyarray = explode(',',$keys);
   if( count($keyarray) > 1) {
-    return function( $a, $b ) use($keyarray) {
-      $result = 0;
-      foreach( $keyarray as $key ) {
-        $result=call_user_func( yabibtex_field_sorter($key), $a, $b );
+    foreach( $keyarray as $key ) {
+      $cmparray[]=yabibtex_field_sorter($key);
+    }
+    return function( $a, $b ) use($cmparray) {
+      foreach( $cmparray as $cmp ) {
+        $result=call_user_func( $cmp, $a, $b );
         if( $result!=0 )
           return $result;
       }
-      return $result;
+      return 0;
     };
   }
 
-  $key = trim($keyarray[0]);
   $asc=true;
+  $key = trim($keyarray[0]);
   if( substr($key,0,1) == '-' ) {
     $asc = false;
     $key = substr($key,1);
   }
 
   if( $key=='date' ) {
-    return function( $a, $b) use ($asc) {
-      $y_cmp = call_user_func(yabibtex_field_sorter('year',$asc),$a,$b);
-      if(!$y_cmp)
-        return call_user_func(yabibtex_field_sorter('month',$asc),$a,$b);
-      return $y_cmp;
+    $asc = $asc ? '' : '-';
+    $y_cmp = yabibtex_field_sorter($asc.'year');
+    $m_cmp = yabibtex_field_sorter($asc.'month');
+    return function( $a, $b) use ($y_cmp,$m_cmp) {
+      $y = call_user_func($y_cmp,$a,$b);
+      if($y==0)
+        return call_user_func($m_cmp,$a,$b);
+      return $y;
     };
   }
 
