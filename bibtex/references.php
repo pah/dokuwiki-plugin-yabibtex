@@ -68,6 +68,31 @@ class EntryCreatorList {
 	public function isEmpty() {
 		return count($this->creators) == 0;
 	}
+
+	public function formatted( $mode='plain', $suffix_l10n='' )
+	{
+		$suffix_s = '';
+		$suffix_p = '';
+		if(!empty($suffix_l10n)) {
+			$suffix_s = ' ('.BibliographyParser::_($suffix_l10n).')';
+			$suffix_p = ' ('.BibliographyParser::_($suffix_l10n.'s').')';
+		}
+
+		switch (count($this->creators)) {
+			case 0:
+				return '';
+			case 1:
+				return $this->creators[0]->formatted($mode).$suffix_s;
+			default:
+				$s = $this->creators[0]->formatted($mode);
+				for ($k = 1; $k < count($this->creators) - 1; $k++) {
+					$s .= ', '.$this->creators[$k]->formatted($mode);
+				}
+				$s .= ' '.BibliographyParser::_('and')
+				     .' '.end($this->creators)->formatted($mode).$suffix_p;
+				return $s;
+		}
+	}
 }
 
 class EntryAuthorList extends EntryCreatorList {
@@ -76,19 +101,11 @@ class EntryAuthorList extends EntryCreatorList {
 	* @return A properly delimited language-specific author list text.
 	*/
 	function __toString() {
-		switch (count($this->creators)) {
-			case 0:
-				return '';
-			case 1:
-				return (string) $this->creators[0];
-			default:
-				$s = (string) $this->creators[0];
-				for ($k = 1; $k < count($this->creators) - 1; $k++) {
-					$s .= ', '.$this->creators[$k];
-				}
-				$s .= ' '.BibliographyParser::_('and').' '.end($this->creators);
-				return $s;
-		}
+		return $this->formatted( 'plain' );
+	}
+
+	function xhtml() {
+		return $this->formatted( 'xhtml' );
 	}
 }
 
@@ -98,19 +115,11 @@ class EntryEditorList extends EntryCreatorList {
 	* @return A properly delimited language-specific editor list text.
 	*/
 	function __toString() {
-		switch (count($this->creators)) {
-			case 0:
-				return '';
-			case 1:
-				return $this->creators[0].' ('.BibliographyParser::_('editor').')';
-			default:
-				$s = (string) $this->creators[0];
-				for ($k = 1; $k < count($this->creators) - 1; $k++) {
-					$s .= ', '.$this->creators[$k];
-				}
-				$s .= ' '.BibliographyParser::_('and').' '.end($this->creators).' ('.BibliographyParser::_('editors').')';
-				return $s;
-		}
+		return $this->formatted( 'plain', 'editor' );
+	}
+
+	function xhtml() {
+		return $this->formatted( 'xhtml', 'editor' );
 	}
 }
 

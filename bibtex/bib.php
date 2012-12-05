@@ -84,11 +84,13 @@ class BibTexParser extends BibliographyParser {
 			}
 			$entry_type = BibTexParser::$mapping[$bibtex_entry_type];
 			$entry = new $entry_type();
-			$entry->citation = $bibtex_entry['bibtexCitation'];
+			$entry->citation   = trim($bibtex_entry['bibtexCitation']);
+			$entry->entry_type = $bibtex_entry['bibtexEntryType'];
+
+			BibTexParser::filterRaw( $bibtex_entry );
+			$entry->raw_fields = $bibtex_entry;
 
 			// unescape special LaTeX characters
-			unset($bibtex_entry['bibtexEntryType']);
-			unset($bibtex_entry['bibtexCitation']);
 			foreach ($bibtex_entry as $key => $value) {
 				if (ctype_alpha($key[0]) && ctype_alnum($key)) {  // ensure valid PHP property name
 					$entry->$key = latex2plain($value);
