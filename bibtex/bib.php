@@ -107,9 +107,9 @@ class BibTexParser extends BibliographyParser {
 			
 			if(isset($bibtex_entry['month'])) {
 				$month = new ParseMonth();
-				list( $startmonth ) = $month->init( $bibtex_entry['month'] );
-				if( $startmonth > 0 ) {
-					$entry->month=$startmonth;
+				$date  = $month->init( $bibtex_entry['month'] );
+				if( $date[0] > 0 ) {
+					$entry->month=$date[0];
 					$entry->raw_fields['month'] = $bibtex_entry;
 				}
 				$month = NULL;
