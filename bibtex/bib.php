@@ -14,6 +14,7 @@ defined( 'DOKU_PLUGIN_YABIBTEX' ) or die( 'Restricted access' );
 
 require_once DOKU_PLUGIN_YABIBTEX.'bibtex/bib/parseentries.php';
 require_once DOKU_PLUGIN_YABIBTEX.'bibtex/bib/parsecreators.php';
+require_once DOKU_PLUGIN_YABIBTEX.'bibtex/bib/parsemonth.php';
 
 /**
 * Parses a bibliography in BibTeX format.
@@ -104,6 +105,16 @@ class BibTexParser extends BibliographyParser {
 				$entry->addEditors(BibTexParser::getEditors(latex2plain($bibtex_entry['editor'])));
 			}
 			
+			if(isset($bibtex_entry['month'])) {
+				$month = new ParseMonth();
+				list( $startmonth ) = $month->init( $bibtex_entry['month'] );
+				if( $startmonth > 0 ) {
+					$entry->month=$startmonth;
+					$entry->raw_fields['month'] = $bibtex_entry;
+				}
+				$month = NULL;
+			}
+
 			// add newly created entry to list of entries
 			$entries[] = $entry;
 		}

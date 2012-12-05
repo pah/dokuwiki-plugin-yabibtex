@@ -363,7 +363,7 @@ function get_month_standard_name($field) {
 		12=>'Dec'
 	);
 
-	if (ctype_digit($field)) {
+	if (ctype_digit((string)$field)) {
 		$month_number = (int) $field;
 		if (array_key_exists($month_number, $month_standard_full_names)) {
 			return $month_standard_full_names[$month_number];
