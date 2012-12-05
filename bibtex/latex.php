@@ -333,6 +333,50 @@ function get_ordinal_standard_name($field) {
 	return false;
 }
 
+function get_month_standard_number($field) {
+	$month_standard_full_names = array(
+		'January'=>1,
+		'February'=>2,
+		'March'=>3,
+		'April'=>4,
+		'May'=>5,
+		'June'=>6,
+		'July'=>7,
+		'August'=>8 ,
+		'September'=>9,
+		'October'=>10,
+		'November'=>11,
+		'December'=>12
+	);
+	$month_standard_short_names = array(
+		'Jan'=>1 ,
+		'Feb'=>2 ,
+		'Mar'=>3 ,
+		'Apr'=>4 ,
+		'May'=>5 ,
+		'Jun'=>6 ,
+		'Jul'=>7 ,
+		'Aug'=>8 ,
+		'Sep'=>9 ,
+		'Oct'=>10,
+		'Nov'=>11,
+		'Dec'=>12
+	);
+
+	if((is_int($field) || ctype_digit($field)) && $field>0 && $field<13 )
+		return (int)$field;
+
+	$field = ucfirst(strtolower($field));
+
+	if( isset( $month_standard_full_names[$field] ) )
+		return $month_standard_full_names[$field];
+
+	if( isset( $month_standard_short_names[$field] ) )
+		return $month_standard_short_names[$field];
+
+	return false;
+}
+
 function get_month_standard_name($field) {
 	$month_standard_full_names = array(
 		1 =>'January',

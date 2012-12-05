@@ -106,15 +106,12 @@ class BibTexParser extends BibliographyParser {
 			}
 			
 			if(isset($bibtex_entry['month'])) {
-				$month = new ParseMonth();
-				$date  = $month->init( $bibtex_entry['month'] );
-				if( $date[0] > 0 ) {
-					$entry->month=$date[0];
-					$entry->raw_fields['month'] = $bibtex_entry;
+				$month = get_month_standard_number( $bibtex_entry['month'] );
+				if( $month !== false ) {
+					$entry->month=$month;
+					$entry->raw_fields['month'] = $month;
 				}
-				$month = NULL;
 			}
-
 			// add newly created entry to list of entries
 			$entries[] = $entry;
 		}
