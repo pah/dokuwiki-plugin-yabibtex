@@ -23,6 +23,47 @@ if (!defined('DOKU_PLUGIN_YABIBTEX'))
 require_once DOKU_PLUGIN.'syntax.php';
 require_once DOKU_INC.'inc/infoutils.php';
 
+function yabibtex_field_sorter($keys)
+{
+  $keyarray = explode(',',$keys);
+  if( count($keyarray) > 1) {
+    return function( $a, $b ) use($keyarray) {
+      $result = 0;
+      foreach( $keyarray as $key ) {
+        $result=call_user_func( yabibtex_field_sorter($key), $a, $b );
+        if( $result!=0 )
+          return $result;
+      }
+      return $result;
+    };
+  }
+
+  $key = trim($keyarray[0]);
+  $asc=true;
+  if( substr($key,0,1) == '-' ) {
+    $asc = false;
+    $key = substr($key,1);
+  }
+
+  if( $key=='date' ) {
+    return function( $a, $b) use ($asc) {
+      $y_cmp = call_user_func(yabibtex_field_sorter('year',$asc),$a,$b);
+      if(!$y_cmp)
+        return call_user_func(yabibtex_field_sorter('month',$asc),$a,$b);
+      return $y_cmp;
+    };
+  }
+
+  return function( $a, $b) use ($key,$asc) {
+    $before = $asc ? -1 :  1;
+    $after  = $asc ?  1 : -1;
+    $f1 = $a->$key;
+    $f2 = $b->$key;
+    if ($f1 == $f2 ) return 0;
+    return ($f1 < $f2) ? $before : $after;
+  };
+}
+
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
     var $namespace  = '';      // namespace tag links point to
@@ -51,7 +92,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
         $this->bibns = $this->getConf('bibns');
         if (!$this->bibns) $this->bibns = getNS($ID);
-        $this->sort = $this->getConf('sortkey');
+        $this->sortkey = $this->getConf('sort');
     }
 
     public function loadFile( $filename )
@@ -116,6 +157,17 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
             }
         }
       }
+    }
+
+    function sort( $keys ) {
+       if( empty($this->entries) )
+         return false;
+       if(empty($keys))
+         $keys = $this->sortkey;
+       if(empty($keys))
+        return true;
+
+       return usort( $this->entries, yabibtex_field_sorter($keys) );
     }
 
     /**
