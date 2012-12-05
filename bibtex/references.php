@@ -33,6 +33,18 @@ class EntryCreator {
 	* @return A language-specific full name.
 	*/
 	function __toString() {
+		return $this->formatted();
+	}
+
+	function addInfo( $info ) {
+		$this->userinfo = $info;
+	}
+
+	function xhtml() {
+		return $this->formatted('xhtml');
+	}
+
+	function formatted( $mode = 'plain' ) {
 		if ($this->given_name) {
 			$full_name = BibliographyParser::sprintf
 			             ('name_format', $this->family_name, $this->given_name);
@@ -44,10 +56,10 @@ class EntryCreator {
 			$full_name = $this->family_name;
 		}
 
-		if ($this->username)
-			return BibliographyParser::renderUser( $this->username, $full_name );
+		if ($mode == 'plain')
+			return $full_name;
 
-		return $full_name;
+		return BibliographyParser::formatUser( $this->userinfo, $full_name );
 	}
 }
 
