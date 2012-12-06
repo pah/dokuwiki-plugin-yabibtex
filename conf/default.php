@@ -11,3 +11,6 @@ $conf['userns'] = 'people';
 $conf['tagns']  = 'tags';
 
 $conf['filter_raw'] = 'file,users,tags';
+
+$conf['userlink']   = 'auto';
+$conf['userfind']   = 'users';

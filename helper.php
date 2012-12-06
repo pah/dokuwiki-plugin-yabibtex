@@ -22,6 +22,7 @@ if (!defined('DOKU_PLUGIN_YABIBTEX'))
 
 require_once DOKU_PLUGIN.'syntax.php';
 require_once DOKU_INC.'inc/infoutils.php';
+require_once DOKU_INC.'inc/search.php';
 
 function yabibtex_field_sorter($keys)
 {
@@ -80,6 +81,38 @@ function yabibtex_field_match($pattern = array()) {
   };
 }
 
+// call_user_func_array($func, array(&$data,$base,$file,'f',$lvl,$opts));
+function yabibtex_init_user_page( &$data, $base, $file, $type, $opts )
+{
+  global $conf;
+
+  // ignore directories
+  if( $type == 'd' ) {
+    if(!$opts['depth']) return true; // recurse forever
+    $parts = explode('/',ltrim($file,'/'));
+    if(count($parts) == $opts['depth']) return false; // depth reached
+    return true;
+  }
+
+  //only search txt files
+  if(substr($file,-4) != '.txt') return true;
+
+  $item['page'] = pathID($file);
+
+  if(!$opts['skipacl'] && auth_quickaclcheck($item['page']) < AUTH_READ)
+    return false;
+
+  $user = noNS($item['page']);
+
+  if( $user == $conf['start'] || isHiddenPage($item['page']) )
+    return false;
+
+  $item['name'] = $item['title'] = p_get_first_heading($item['page']);
+
+  $data[$user] = $item;
+  return true;
+}
+
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
     var $namespace  = '';      // namespace tag links point to
@@ -91,7 +124,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     var $show_raw_bibtex = true;
     var $show_abstract   = true;
 
-    static $user_table = array();
+    static $user_table   = NULL;
+    static $author_table = array();
 
     /**
      * Constructor gets default preferences and language strings
@@ -131,57 +165,171 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         return $this->entries;
     }
 
+    private function _initUsers() {
+        $user_table =& helper_plugin_yabibtex::$user_table;
+
+        // preload known users (done)
+        if( is_array( $user_table ) )
+          return;
+
+        $user_pages = array(); 
+        $user_auth  = array(); 
+        $userfind   = $this->getConf('userfind');
+        $userns     = $this->getConf('userns');
+
+        if( $userfind != 'users' ) { // look for pages
+          global $conf;
+
+          // search(&$data,$base,$func,$opts,$dir='',$lvl=1,$sort=true)
+          search( $users_page, $conf['datadir']
+                , 'yabibtex_init_user_page'
+                , array() /* opts */
+                , $userns
+                , 1, false );
+        }
+
+        if( $userfind != 'pages' ) { // look for users
+          global $auth;
+          $users_auth = $auth->retrieveUsers();
+ 
+          // cleanup unneeded fields
+          foreach( $users_auth as $k => $u ) {
+            $users_auth[$k] = array( 'name' => $u['name']
+                                   , 'page' => cleanID( $userns.':'.$k) );
+            if( isset($users_page[$k]['title']) )
+              $users_auth[$k]['title'] = $users_page[$k]['title'];
+          }
+        }
+        $user_table = array_merge( $users_page, $users_auth );
+    }
+
+    private function _findUserInfo( $user ) {
+      global $auth;
+      $users  =& helper_plugin_yabibtex::$user_table;
+      $userns =  $this->getConf('userns');
+
+      if( isset( $users[$user] ) )
+        return $users[$user];
+
+      $item = $auth->getUserData( $user );
+      $page = cleanID( $userns.':'.$user );
+
+      // user found
+      if( $item !== false ) {
+        $item = array( 'name' => $item['name']
+                     , 'page' => $page );
+      } else {
+        $item = array( 'page' => $page );
+      }
+
+      if( page_exists($page) )
+        $item['title'] = p_get_first_heading($page);
+
+      if( empty($item['name']) )
+        $item['name'] = $item['title'];
+
+      // fallback
+      if( empty($item['name']) )
+        $item['name'] = $user;
+
+      // return cached value
+      return $users[$user] = $item;
+    }
+
+    private function _findAuthorInfo( &$creator, $user=NULL )
+    {
+      $user_table   =& helper_plugin_yabibtex::$user_table;
+
+      $name = (string)$creator;
+
+      // search automatic author<->user matching
+      if( $user === NULL ) {
+        $author_table =& helper_plugin_yabibtex::$author_table;
+        if( isset( $author_table[$name] ) ) {
+          $creator->addInfo( $author_table[$name] );
+          return true;
+        }
+        foreach( $user_table as $k => $u ) {
+          if( $u !== false && $name == $u['name'] ) {
+            $author_table[$name] = $u;
+            $creator->addInfo( $u );
+            return true;
+          }
+        }
+        return $author_table[$name] = false;
+      }
+
+      $item = false;
+      // explicit lookup of user info with manual assignment
+      if( !isset($user_table[$user]) )
+        $item = $this->_findUserInfo($user);
+
+      // fallback entry
+      if( $item === false ) {
+        $item = array('page'=>cleanID($this->getConf('userns').':'.$user));
+      }
+      $creator->addInfo($item);
+      return isset($item['name']);
+    }
+
     private function _loadUsers() {
       global $auth;
 
-      $ns    = $this->getConf('userns');
+      if( $this->getConf('userlink') == "auto" ) {
+        $this->_initUsers();
+      }
+    }
 
-      if( $this->getConf('userlinkauto') ) {
-        $users = $auth->retrieveUsers();
-      } else {
-        $users = array();
-        foreach( $this->entries as $entry ) {
-          if( !empty($entry->users) ) {
-            $unames = explode(',', $entry->users);
-            foreach( $unames as $u ) {
-              $u = trim($u);
-              if (!isset($users[$u]) ) {
-                $users[$u] = $auth->getUserData($u);
-              }
+    private function _findAuthors( $userlink, &$entry ) {
+
+      if( $userlink == 'off' )
+        return false;
+
+      if( $userlink == 'explicit' && $entry->users === NULL )
+        return false;
+
+      $referenced = array();
+      $overridden = array(); // explicit IDs for authors
+
+      if( $entry->users !== NULL ) {
+        $unames = explode(',', $entry->users );
+        foreach( $unames as $u ) {
+          if( preg_match('/^\s*(?:(?:([ae]):)?([0-9]+):)?([a-z0-9_-]+)\s*$/i'
+                        , $u, $m ) )
+          {
+            $referenced[] = cleanID($m[3]);
+            if( !empty($m[2]) ) {
+              if( empty($m[1]) ) $m[1] = 'a';
+              $overridden[strtolower($m[1])][(int)($m[2])]
+                = end( $referenced );
             }
           }
         }
       }
-      $user_table =& $this->user_table;
-      foreach( $users as $user => $info ) {
-        $name = $info['name'];
-        $page = cleanID( $ns.':'.$user ); 
-        $title = $name;
-        if( page_exists($page) ) {
-          $title    = p_get_first_heading($page);
+
+      if( $userlink == 'explicit' ) {
+        foreach( $referenced as $u ) { // force update user cache
+          $this->_findUserInfo($u);
         }
-        $user_table[$name] = compact( 'user', 'page', 'name', 'title' );
       }
 
-      if( empty($user_table) )
-        return false;
-
-      foreach( $this->entries as $e ) {
-        foreach( array( $e->authors, $e->editors ) as $list ) {
-          if( !$list->isEmpty() )
-            foreach( $list->creators as $c ) {
-              $name =  (string) $c;
-              if( isset($user_table[$name]) ) {
-                $c->addInfo( $user_table[$name] );
-              }
-            }
+      $l = 'a';
+      foreach( array( $entry->authors, $entry->editors ) as $list ) {
+        if( !$list->isEmpty() ) {
+          $i = 1; 
+          foreach( $list->creators as $c ) {
+            $name =  (string) $c;
+            $this->_findAuthorInfo( $c, $overridden[$l][$i] );
+            $i++;
+          }
         }
+        $l = 'e';
       }
     }
 
     function sort( $keys ) {
        if( empty($this->entries) )
-         return false;
+         return true;
        if(empty($keys))
          $keys = $this->sortkey;
        if(empty($keys))
@@ -237,6 +385,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
             $flags['class']=$oldclass.' even';
           foreach ( $this->entries as $entry) {
             $renderer->doc.= '<dd class="'.$even.'">';
+            $this->_findAuthors( $flags['userlink'], $entry );
             $entry->printFormatted( $flags );
             $renderer->doc.= '</dd>'.DOKU_LF;
             if ($flags['rowcolors'] )
