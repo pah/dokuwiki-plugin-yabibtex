@@ -31,7 +31,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
     var $data       = array(); // handle to loaded entries
 
-    var $show_raw_bibtex = false;
+    var $show_raw_bibtex = true;
     var $show_abstract   = false;
 
     /**
@@ -45,8 +45,9 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $this->setupLocale();
         $this->loadConfig();
 
-        BibliographyParser::$lang =& $this->lang;
-        BibliographyParser::$conf =& $this->conf;
+        BibliographyParser::$lang  =& $this->lang;
+        BibliographyParser::$conf  =& $this->conf;
+        BibliographyParser::$users =& $this->user_table;
 
         $this->bibns = $this->getConf('bibns');
         if (!$this->bibns) $this->bibns = getNS($ID);
@@ -58,6 +59,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $bibtex_entries = BibTexParser::read($filename);
         $entries = BibTexParser::parse($bibtex_entries);
         $this->data = array($bibtex_entries, $entries);
+        $this->_loadUsers();
         return $this->data;
     }
 
@@ -66,7 +68,54 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $bibtex_entries = BibTexParser::readString($string);
         $entries = BibTexParser::parse($bibtex_entries);
         $this->data = array($bibtex_entries, $entries);
+        $this->_loadUsers();
         return $this->data;
+    }
+
+    private function _stripTitle( $longname ) {
+      // TODO
+      return $longname;
+    }
+
+    private function _loadUsers() {
+      $ns    = $this->getConf('userns');
+
+      if( $this->getConf('autouserlink') ) {
+        // use retrieveUsers!
+        // TODO
+      } else {
+        $users = array();
+        foreach( $this->data[0] as $entry ) {
+          if( !empty($entry['users']) ) {
+            $users = array_merge( $users, explode(',', $entry['users']) ); 
+          }
+        }
+        $users = array_unique( $users );
+      }
+
+      $user_table = array();
+      foreach( $users as $user ) {
+        $user = trim($user);
+        $page = cleanID( $ns.':'.$user ); 
+        if( page_exists($page) ) {
+          $title    = p_get_first_heading($page);
+          $name     = $this->_stripTitle($title); 
+          $user_table[$name] = compact( 'user', 'page', 'name', 'title' );
+        }
+      }
+
+      $this->user_table = $user_table;
+      if( empty($user_table) )
+        return false;
+
+      foreach( $this->data[1] as $e ) {
+              dbg($e);
+        foreach( array( $e->getAuthors(), $e->getEditors() ) as $list ) {
+          if( !$list->isEmpty() )
+            foreach( $e->creators as $c ) {
+            }
+        }
+      }
     }
 
     /**

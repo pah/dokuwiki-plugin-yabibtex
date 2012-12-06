@@ -20,10 +20,12 @@ require_once DOKU_PLUGIN_YABIBTEX.'bibtex/latex.php';
 class EntryCreator {
 	protected $given_name;
 	protected $family_name;
+	protected $username;
 	
 	function __construct($family_name, $given_name = false) {
 		$this->family_name = $family_name;
 		$this->given_name = $given_name;
+		$this->username = NULL;
 	}
 
 	/**
@@ -38,10 +40,14 @@ class EntryCreator {
 				/* language string missing, default to Western name order */
 				$full_name = $this->given_name.' '.$this->family_name;
 			}
-			return $full_name;
 		} else {
-			return $this->family_name;
+			$full_name = $this->family_name;
 		}
+
+		if ($this->username)
+			return BibliographyParser::renderUser( $this->username, $full_name );
+
+		return $full_name;
 	}
 }
 
@@ -49,7 +55,7 @@ class EntryCreator {
 * A list of creators (i.e. authors or editors) of a piece in a bibliography entry.
 */
 class EntryCreatorList {
-	protected $creators = array();
+	public $creators = array();
 	
 	public function add(EntryCreator $creator) {
 		$this->creators[] = $creator;
@@ -129,8 +135,8 @@ class Entry {
 	*/
 	protected $fields = array();
 
-	protected $authors;
-	protected $editors;
+	public $authors;
+	public $editors;
 
 	function __construct() {
 		$this->authors = new EntryAuthorList();
@@ -627,14 +633,20 @@ class UnpublishedEntry extends Entry {
 }
 
 /**
-* Base class for bibliography parsers.
-*/
+ * Base class for bibliography parsers.
+ *
+ * 
+ */
 class BibliographyParser {
 
 	/** localization array -- initialized from helper plugin */
 	public static $lang = NULL;
 	/** configuration array -- initialized from helper plugin */
 	public static $conf = NULL;
+	/** user array -- initialized from helper plugin */
+	public static $users = NULL;
+	/** DokuWiki helper plugin reference */
+	public static $plugin = NULL;
 
 	public static function _( $str ) {
 		if( !empty(BibliographyParser::$lang[$str]) )
@@ -659,4 +671,14 @@ class BibliographyParser {
 		}
 	}
 
+	public static function renderUser( $username, $full_name ) {
+		list( $page_id, $title ) = BibliographyParser::$user[$username];
+		$class = 'wikilink1';
+
+		if( !empty($page_id) )
+			return '<a href="'.wl($page_id)
+			        .'" class="'.$class.'" title="'.$title.'">'
+			        .$full_name.'</a>';
+		return $full_name;
+	}
 }
