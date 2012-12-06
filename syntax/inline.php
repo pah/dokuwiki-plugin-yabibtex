@@ -18,10 +18,10 @@ require_once DOKU_PLUGIN.'syntax.php';
 
 class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
 {
-    var $options_pattern;
+    var $helper = false;
+    var $flags  = array();
 
     public function syntax_plugin_yabibtex_inline() {
-      $this->options_pattern='';
     }
 
     public function getType() {
@@ -37,44 +37,56 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
     }
 
     public function connectTo($mode) {
-        $this->Lexer->addEntryPattern('<bibtex[[:space:]&]*[^>]*>',$mode,'plugin_yabibtex_inline');
+        $this->Lexer->addEntryPattern('<bibtex[[:space:]&]*[^>]*>'
+                                     , $mode, 'plugin_yabibtex_inline' );
     }
 
     public function postConnect() {
         $this->Lexer->addExitPattern('</bibtex>','plugin_yabibtex_inline');
     }
 
-    public function handle($match, $state, $pos, &$handler){
-        $data = array();
+    public function handle($match, $state, $pos, &$handler)
+    {
+        if($this->helper===false)
+          $this->helper =& plugin_load('helper','yabibtex');
+        if(!$this->helper)
+          return false;
+
+        $data = false;
 
         if ($state == DOKU_LEXER_ENTER){
-          $data['flags']['sort']    = '-date,citation';
-          $data['flags']['abstract']= true;
-          $data['flags']['bibtex']  = false;
+          $flags['sort']    = '-date,citation';
+          $flags['abstract']= true;
+          $flags['bibtex']  = true;
 
-          $flags = substr($match, strlen('<bibtex'),-1);
-          if( !empty($flags) ) {
+          $options = substr($match, strlen('<bibtex'),-1);
+          if( !empty($options) ) {
           }
 
-          if(!$data['flags']['abstract'])
-            $data['flags']['filter_raw'][] = 'abstract';
+          if(!$flags['abstract'])
+            $flags['filter_raw'][] = 'abstract';
 
-          return $data;
+          $this->flags[ $pos+strlen($match) ] = $flags;
+
         } else if ($state == DOKU_LEXER_UNMATCHED) {
             $bibtex=trim($match);
             if( !empty($bibtex) )
-                return array( 'bibtex' => $bibtex );
+                $data = array( 'bibtex' => $bibtex
+                             , 'flags' => $this->flags[$pos] );
+            unset( $this->flags[$pos] );
+
         }
-        return false;
+        return $data;
     }
 
-    public function render($mode, &$renderer, $data) {
-        $bt =& plugin_load('helper','yabibtex');
-        if(!$bt) return false;
+    public function render($mode, &$renderer, $data)
+    {
+        if(!$this->helper)
+          return false;
 
-        $bt->loadString($data['bibtex']);
-        $bt->sort( $data['flags']['sort'] );
-        $bt->renderBibTeX( $data['flags'], $renderer, $mode );
+        $this->helper->loadString($data['bibtex']);
+        $this->helper->sort( $data['flags']['sort'] );
+        $this->helper->renderBibTeX( $data['flags'], $renderer, $mode );
         return true;
     }
 }

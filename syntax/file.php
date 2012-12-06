@@ -66,7 +66,7 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
 
       $flags['sort']    = '-date,citation';
       $flags['abstract']= true;
-      $flags['bibtex']  = false;
+      $flags['bibtex']  = true;
 
       if(!$flags['abstract'])
         $flags['filter_raw'][] = 'abstract';
