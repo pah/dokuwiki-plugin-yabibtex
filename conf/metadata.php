@@ -11,3 +11,4 @@ $meta['bibns']  = array('string');
 $meta['userns'] = array('string');
 $meta['tagns']  = array('string');
 
+$meta['filter_raw']   = array('string','_pattern'=>'/^(\w+(,\s*\w+)*)?$)/');

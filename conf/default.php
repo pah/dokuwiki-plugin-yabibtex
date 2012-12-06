@@ -9,3 +9,4 @@ $conf['sort']   = '-date';
 $conf['bibns']  = 'bib';
 $conf['userns'] = 'people';
 $conf['tagns']  = 'tags';
+$conf['filter_raw'] = 'file,users,tags';

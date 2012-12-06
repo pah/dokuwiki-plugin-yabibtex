@@ -346,6 +346,8 @@ class Entry {
 		$entry_citation = $entry['bibtexCitation'];
 		unset($entry['bibtexEntryType']);
 		unset($entry['bibtexCitation']);
+		$entry_type = $this->entry_type;
+		$entry_citation = $this->citation;
 		
 		ob_start();
 		print "@{$entry_type}{{$entry_citation}";
@@ -669,6 +671,14 @@ class BibliographyParser {
 	public static $users = NULL;
 	/** DokuWiki helper plugin reference */
 	public static $plugin = NULL;
+	public static function filterRaw( &$bibtex_entry ) {
+		unset($bibtex_entry['bibtexCitation']);
+		unset($bibtex_entry['bibtexEntryType']);
+
+		$filter = BibliographyParser::$plugin->filter_raw;
+		foreach( $filter as $f )
+			unset( $bibtex_entry[$f] );
+	}
 
 	public static function _( $str ) {
 		if( !empty(BibliographyParser::$lang[$str]) )
