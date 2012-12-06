@@ -196,31 +196,29 @@ class Entry {
 	* Produces a formatted bibliography entry for HTML output.
 	* @return A human-readable bibliography reference.
 	*/
-	public function printFormatted( $raw_bibtex = false
-	                              , $with_abstract = false
-	                              , $class = '' )
+	public function printFormatted( $flags = array() )
 	{
 		$id = get_class($this).'-'
 		     .preg_replace('/[^A-Za-z0-9_-]/', '_', $this->citation);
-		$this->printString('<div class="bibtexEntry '.$class.'" id="'.$id.'">' );
+		$this->printString('<div class="bibtexEntry '.$flags['class'].'" id="'.$id.'">' );
 		$this->printString('<p>');
 		$this->printEntry();
-		if ($with_abstract && !empty($this->fields['abstract'])) {
+		if ($flags['abstract'] && !empty($this->fields['abstract'])) {
 			$this->printString('<a href="#bibtexAbstract_'.$id.'" title="Show abstract" class="bibtexLink folder">Abstract</a>');
 		}
-		if ($raw_bibtex) {
+		if ($flags['bibtex']) {
 			$this->printString('<a href="#bibtexCode_'.$id.'" title="Show BibTeX source" class="bibtexLink folder">BibTeX</a>');
 		}
 		$this->printString('</p>');
 
-		if ($with_abstract)
+		if ($flags['abstract'])
 			$this->printAbstract($id, $this->fields);
 
-		if ($raw_bibtex) {
+		if ($flags['bibtex']) {
 			$this->printString('<div class="bibtexCode folded hidden" id="bibtexCode_'.$id.'">');
 			$bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
                                  , trim($this->citation) ).'.bib';
-			BibliographyParser::printCode( $this->getRaw(), $bibfilename );
+			BibliographyParser::printCode( $this->getRaw($flags['filter_raw']), $bibfilename );
 			$this->printString('</div>');
 		}
 		$this->printString('</div>');
@@ -351,13 +349,16 @@ class Entry {
 	/**
 	* returns a single raw BibTeX entry.
 	*/
-	public function getRaw() {
+	public function getRaw( $filter=array() ) {
 		$entry_type = $this->entry_type;
 		$entry_citation = $this->citation;
 		
+		$raw = $this->raw_fields;
+		BibliographyParser::filterRaw( $raw, $filter );
+
 		ob_start();
 		print "@{$entry_type}{{$entry_citation}" ;
-		foreach ($this->raw_fields as $key => $value) {
+		foreach ($raw as $key => $value) {
 			print ",\n\t".$key.' = ' ;
 			if (ctype_digit($value)) {
 				print $value ;  // no need to escape integers
@@ -681,13 +682,16 @@ class BibliographyParser {
 	public static $renderer = NULL;
 
 
-	public static function filterRaw( &$bibtex_entry ) {
+	public static function filterRaw( &$bibtex_entry, $filter=NULL ) {
 		unset($bibtex_entry['bibtexCitation']);
 		unset($bibtex_entry['bibtexEntryType']);
 
-		$filter = BibliographyParser::$plugin->filter_raw;
+		if( !is_array($filter) )
+			return false;
+
 		foreach( $filter as $f )
 			unset( $bibtex_entry[$f] );
+		return true;
 	}
 
 	public static function _( $str ) {

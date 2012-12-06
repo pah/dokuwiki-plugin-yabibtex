@@ -193,35 +193,55 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     /**
      * Produces a formatted BibTeX list of the current entry array.
      */
-    public function renderBibTeX( &$renderer = NULL, $mode='xhtml' ) {
-
+    public function renderBibTeX( $flags=array() 
+                                , &$renderer = NULL
+                                , $mode='xhtml' )
+    {
         if( empty($this->entries) )
           return NULL;
 
         $temp_render = false;
-        if( is_null($renderer) ) {
+        if( $renderer === NULL ) {
           $renderer =& p_get_renderer($mode);
           $temp_render = true;
           $renderer->reset();
         }
 
+        if( !isset( $flags['rowcolors'] ) )
+          $flags['rowcolors'] = $this->getConf( 'rowcolors' );
+        if( !isset( $flags['bibtex'] ) )
+          $flags['bibtex'] = $this->getConf( 'show_bibtex' );
+        if( !isset( $flags['abstract'] ) )
+          $flags['abstract'] = $this->getConf( 'show_abstract' );
+        if( !isset( $flags['userlink'] ) )
+          $flags['userlink'] = $this->getConf( 'userlink' );
+
         BibliographyParser::$renderer =& $renderer;
 
-        if( $mode == 'code') {
-          if( $this->show_raw_bibtex)
+        if( $mode == 'code')
+        {
+          if( $flags['bibtex'] )
             foreach ( $this->entries as $entry) {
               $bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
                                          , trim($entry->citation) ).'.bib';
-              BibliographyParser::printCode($entry->getRaw(),$bibfilename);
+              BibliographyParser::printCode(
+                $entry->getRaw($flags['filter_raw']),$bibfilename
+              );
             }
-        } else if ($mode == 'xhtml' ) {
+        }
+        else if ($mode == 'xhtml' )
+        {
           $renderer->doc.= '<dl class="bibtexList">'.DOKU_LF;
-          $even = 0;
+          $even=0; $oldclass = $flags['class'];
+          if ($flags['rowcolors'] )
+            $flags['class']=$oldclass.' even';
           foreach ( $this->entries as $entry) {
-            $renderer->doc.= '<dd class="'.($even ? 'even' : 'odd').'">';
-            $entry->printFormatted( $this->show_raw_bibtex, $this->show_abstract, ($even ? 'even':'odd') );
+            $renderer->doc.= '<dd class="'.$even.'">';
+            $entry->printFormatted( $flags );
             $renderer->doc.= '</dd>'.DOKU_LF;
-            $even = $even ? 0 : 1;
+            if ($flags['rowcolors'] )
+              $flags['class'] = $oldclass
+                . (($even=($even+1)%2) ? ' odd' : ' even');
           }
           $renderer->doc.= '</dl>'.DOKU_LF;
         }

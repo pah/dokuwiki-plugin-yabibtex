@@ -64,8 +64,16 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
         return false;
       }
 
+      $flags['sort']    = '-date,citation';
+      $flags['abstract']= true;
+      $flags['bibtex']  = false;
+
+      if(!$flags['abstract'])
+        $flags['filter_raw'][] = 'abstract';
+
       $ns = $this->getConf('bibns');
-      $data['file'] = cleanID($ns.':'.$data['file']);
+      $data['file']  = cleanID($ns.':'.$data['file']);
+      $data['flags'] = $flags;
 
       return $data;
     }
@@ -94,8 +102,8 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
         }
 
         $bt->loadFile(wikiFN($data['file']));
-        $bt->sort( '-date,citation' );
-        $bt->renderBibTeX( $renderer, $mode );
+        $bt->sort( $data['flags']['sort']  );
+        $bt->renderBibTeX( $data['flags'], $renderer, $mode );
 
         if( $mode == 'xhtml' ) {
           if( auth_quickaclcheck($data['file']) >= ACL_READ ) {

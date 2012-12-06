@@ -37,7 +37,7 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
     }
 
     public function connectTo($mode) {
-        $this->Lexer->addEntryPattern('<bibtex[^>]*>',$mode,'plugin_yabibtex_inline');
+        $this->Lexer->addEntryPattern('<bibtex[[:space:]&]*[^>]*>',$mode,'plugin_yabibtex_inline');
     }
 
     public function postConnect() {
@@ -48,9 +48,18 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
         $data = array();
 
         if ($state == DOKU_LEXER_ENTER){
-            $options = substr($match, strlen('<bibtex'),-1);
-            if( !empty($options) )
-                return array( 'options' => $options );
+          $data['flags']['sort']    = '-date,citation';
+          $data['flags']['abstract']= true;
+          $data['flags']['bibtex']  = false;
+
+          $flags = substr($match, strlen('<bibtex'),-1);
+          if( !empty($flags) ) {
+          }
+
+          if(!$data['flags']['abstract'])
+            $data['flags']['filter_raw'][] = 'abstract';
+
+          return $data;
         } else if ($state == DOKU_LEXER_UNMATCHED) {
             $bibtex=trim($match);
             if( !empty($bibtex) )
@@ -64,8 +73,8 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
         if(!$bt) return false;
 
         $bt->loadString($data['bibtex']);
-
-        $bt->renderBibTeX( $renderer, $mode );
+        $bt->sort( $data['flags']['sort'] );
+        $bt->renderBibTeX( $data['flags'], $renderer, $mode );
         return true;
     }
 }
