@@ -5,7 +5,8 @@
  * @author Philipp A. Hartmann <pah@qo.cx>
  */
 
-$meta['sort'] = array('string','_pattern'=>'/^(\w+(,\s*\w+)*)?$)/');
+$meta['sort'] = array('string'
+                     ,'_pattern' => '/^\\^?[A-Za-z_-]+(,\s*\\^?[A-Za-z_-]+)*$/');
 
 $meta['bibns']  = array('string');
 $meta['userns'] = array('string');

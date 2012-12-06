@@ -42,13 +42,13 @@ function yabibtex_field_sorter($keys)
 
   $asc=true;
   $key = trim($keyarray[0]);
-  if( substr($key,0,1) == '-' ) {
+  if( substr($key,0,1) == '^' ) {
     $asc = false;
     $key = substr($key,1);
   }
 
   if( $key=='date' ) {
-    $asc = $asc ? '' : '-';
+    $asc = $asc ? '' : '^';
     $y_cmp = yabibtex_field_sorter($asc.'year');
     $m_cmp = yabibtex_field_sorter($asc.'month');
     return function( $a, $b) use ($y_cmp,$m_cmp) {
