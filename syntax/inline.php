@@ -60,21 +60,12 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
     }
 
     public function render($mode, &$renderer, $data) {
-        if($mode != 'xhtml') return false;
-
         $bt =& plugin_load('helper','yabibtex');
         if(!$bt) return false;
 
         $bt->loadString($data['bibtex']);
 
-//  if(!plugin_isdisabled('tag')) {
-//            $tag =& plugin_load('helper', 'tag');
-//            $entries = $tag->tagRefine($entries, $refine);
-//        }
-
-        $body = '<code bibtex>'.$data['bibtex'].'</code>';
-        $renderer->doc.=$bt->renderBibTeX();
-        $renderer->doc.=$bt->render( $body );
+        $bt->renderBibTeX( $renderer, $mode );
         return true;
     }
 }

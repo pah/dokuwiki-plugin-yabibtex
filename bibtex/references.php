@@ -20,12 +20,12 @@ require_once DOKU_PLUGIN_YABIBTEX.'bibtex/latex.php';
 class EntryCreator {
 	protected $given_name;
 	protected $family_name;
-	protected $username;
+	protected $userinfo;
 	
 	function __construct($family_name, $given_name = false) {
 		$this->family_name = $family_name;
 		$this->given_name = $given_name;
-		$this->username = NULL;
+		$this->userinfo = NULL;
 	}
 
 	/**
@@ -197,30 +197,33 @@ class Entry {
 	* @return A human-readable bibliography reference.
 	*/
 	public function printFormatted( $raw_bibtex = false
-	                              , $with_abstract = false)
+	                              , $with_abstract = false
+	                              , $class = '' )
 	{
 		$id = get_class($this).'-'
 		     .preg_replace('/[^A-Za-z0-9_-]/', '_', $this->citation);
-		print '<div class="bibtexEntry" id="'.$id.'">';
-		print '<p>';
+		$this->printString('<div class="bibtexEntry '.$class.'" id="'.$id.'">' );
+		$this->printString('<p>');
 		$this->printEntry();
 		if ($with_abstract && !empty($this->fields['abstract'])) {
-			print '<a href="#bibtexAbstract_'.$id.'" title="Show abstract" class="bibtexLink folder">Abstract</a>';
+			$this->printString('<a href="#bibtexAbstract_'.$id.'" title="Show abstract" class="bibtexLink folder">Abstract</a>');
 		}
 		if ($raw_bibtex) {
-			print '<a href="#bibtexCode_'.$id.'" title="Show BibTeX source" class="bibtexLink folder">BibTeX</a>';
+			$this->printString('<a href="#bibtexCode_'.$id.'" title="Show BibTeX source" class="bibtexLink folder">BibTeX</a>');
 		}
-		print '</p>';
+		$this->printString('</p>');
 
 		if ($with_abstract)
 			$this->printAbstract($id, $this->fields);
 
 		if ($raw_bibtex) {
-			print '<div class="bibtexCode folded hidden" id="bibtexCode_'.$id.'">';
-			print $raw_bibtex;
-			print '</div>';
+			$this->printString('<div class="bibtexCode folded hidden" id="bibtexCode_'.$id.'">');
+			$bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
+                                 , trim($this->citation) ).'.bib';
+			BibliographyParser::printCode( $this->getRaw(), $bibfilename );
+			$this->printString('</div>');
 		}
-		print '</div>';
+		$this->printString('</div>');
 	}
 	
 	private static function translateOrdinal(&$entry, $field) {
@@ -231,10 +234,15 @@ class Entry {
 		}
 	}
 
+	protected static function printString( $str ) {
+		BibliographyParser::printString( $str );
+	}
+
 	protected static function printCreators($list, $class) {
 		if( $list->isEmpty() )
 			return false;
-		print '<span class="'.$class.'">'.$list.'.</span> ';
+		Entry::printString('<span class="'.$class.'">'
+		                      .$list->xhtml().'.</span> ');
 		return true;
 	}
 
@@ -244,17 +252,17 @@ class Entry {
 				$entry[$field] = 'http://dx.doi.org/'.$entry[$field];
 			}
 			if ($usecomma) {
-				print ', ';
+				Entry::printString(', ');
 			}
-			print '<a class="bibtexLink urlextern" target="_blank" href="'
-			      .$entry[$field].'">'.$field.'</a>';
+			Entry::printString('<a class="bibtexLink urlextern" target="_blank" href="'
+			      .$entry[$field].'">'.$field.'</a>');
 			$usecomma = false;
 		}
 	}
 
 	protected static function printDot(&$usecomma) {
 		if ($usecomma) {
-			print '.';
+			Entry::printString('.');
 		}
 		$usecomma = false;
 	}
@@ -262,9 +270,9 @@ class Entry {
 	protected static function printField($entry, $field, &$usecomma) {
 		if (isset($entry[$field])) {
 			if ($usecomma) {
-				print ',';
+				Entry::printString(',');
 			}
-			print ' '.$entry[$field];
+			Entry::printString(' '.$entry[$field]);
 			$usecomma = true;
 		}
 	}
@@ -274,11 +282,11 @@ class Entry {
 			$stringkey = $field;
 			$formatkey = $field.'_format';
 			if ($usecomma) {
-				print ', ';
+				Entry::printString(', ');
 				BibliographyParser::printf($formatkey, $entry[$field], BibliographyParser::_($stringkey));
 			} else {
-				print ' ';
-				print ucfirst(BibliographyParser::sprintf($formatkey, $entry[$field], BibliographyParser::_($stringkey)));
+				Entry::printString(' ');
+				Entry::printString(ucfirst(BibliographyParser::sprintf($formatkey, $entry[$field], BibliographyParser::_($stringkey))));
 			}
 			$usecomma = true;
 		}
@@ -308,16 +316,19 @@ class Entry {
 
 	protected static function printPages($entry, &$usecomma) {
 		if (isset($entry['pages'])) {
-			print $usecomma ? ', ' : ' ';
+			Entry::printString($usecomma ? ', ' : ' ');
 			BibliographyParser::printf('pagerange_format', $entry['pages'], ctype_digit($entry['pages']) ? BibliographyParser::_('page') : BibliographyParser::_('pages'));
 			$usecomma = true;
 		}
 	}
 	
 	protected static function printDate($entry, &$usecomma) {
+
 		if (isset($entry['year'])) {
-			print $usecomma ? ', ' : ' ';
-			if (isset($entry['month']) && ($month = get_month_standard_name($entry['month'])) !== false) {
+			Entry::printString($usecomma ? ', ' : ' ');
+			if (isset($entry['month']) &&
+			   ($month = get_month_standard_name($entry['month'])) !== false)
+			{
 				BibliographyParser::printf('date_format_yearmonth', $entry['year']
 				                          , BibliographyParser::_($month) );
 			} else {
@@ -329,63 +340,58 @@ class Entry {
 
 	protected static function printAbstract( $id, $entry ) {
 		if (isset($entry['abstract'])) {
-			print '<div class="bibtexAbstract folded hidden" '.
+			Entry::printString('<div class="bibtexAbstract folded hidden" '.
 			           'id="bibtexAbstract_'.$id.'">'
 			     .'<h1>'.BibliographyParser::_('abstract').'</h1>'
 			     .'<p>'.latex2plain($entry['abstract']).'</p>'
-			     .'</div>';
+			     .'</div>');
 		}
 	}
 	
 	/**
-	* Outputs a single raw BibTeX entry.
-	* @param entry An associative array representing a parsed BibTeX entry returned by BibTexParser.
+	* returns a single raw BibTeX entry.
 	*/
-	public static function getRaw($entry) {
-		$entry_type = $entry['bibtexEntryType'];
-		$entry_citation = $entry['bibtexCitation'];
-		unset($entry['bibtexEntryType']);
-		unset($entry['bibtexCitation']);
+	public function getRaw() {
 		$entry_type = $this->entry_type;
 		$entry_citation = $this->citation;
 		
 		ob_start();
-		print "@{$entry_type}{{$entry_citation}";
-		foreach ($entry as $key => $value) {
-			print ",\n\t".$key.' = ';
+		print "@{$entry_type}{{$entry_citation}" ;
+		foreach ($this->raw_fields as $key => $value) {
+			print ",\n\t".$key.' = ' ;
 			if (ctype_digit($value)) {
-				print $value;  // no need to escape integers
+				print $value ;  // no need to escape integers
 			} elseif (strpos($value, '@') !== false) {
-				print '"'.str_replace('"', '{"}', $value).'"';
+				print '"'.str_replace('"', '{"}', $value).'"' ;
 			} elseif (strpos($value, '"') !== false) {
-				print '{'.$value.'}';
+				print '{'.$value.'}' ;
 			} else {
-				print '"'.$value.'"';
+				print '"'.$value.'"' ;
 			}
 		}
-		print "\n}\n";
+		print "\n}\n" ;
 		return ob_get_clean();
 	}
 }
 
 class ArticleEntry extends Entry {
 	public function printEntry() {
-                // TODO: add more styles (PAH)
+	
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
-    print '<span class="bibtexJournal">'.$e['journal'].'</span>';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
+		$this->printString('<span class="bibtexJournal">'.$e['journal'].'</span>');
 		if (isset($e['volume']) && isset($e['number'])) {
-			print ' '.$e['volume'].'('.$e['number'].')';
+			$this->printString(' '.$e['volume'].'('.$e['number'].')');
 		} elseif (isset($e['volume'])) {
-			print ' '.$e['volume'];
+			$this->printString(' '.$e['volume']);
 		} elseif (isset($e['number'])) {
-			print ' ('.$e['number'].')';
+			$this->printString(' ('.$e['number'].')');
 		}
 		$usecomma = true;
 		if (isset($e['pages'])) {
 			if (isset($e['volume']) || isset($e['number'])) {
-				print ':'.$e['pages'];
+				$this->printString(':'.$e['pages']);
 			} else {
 				$this->printPages($e, $usecomma);
 			}
@@ -405,7 +411,7 @@ class BookEntry extends Entry {
 		$e =& $this->fields;
 		if (!$this->printCreators($this->editors, 'bibtexEditors') )
 			$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		$this->printEdition($e, $usecomma);
 		$this->printSeries($e, $usecomma);
@@ -427,7 +433,7 @@ class BookletEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		$this->printField($e, 'howpublished', $usecomma);
 		$this->printField($e, 'address', $usecomma);
@@ -446,7 +452,7 @@ class InBookEntry extends Entry {
 		$e =& $this->fields;
 		if (!$this->printCreators($this->editors, 'bibtexEditors') )
 			$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		$this->printField($e, 'type', $usecomma);
 		$this->printSeries($e, $usecomma);
@@ -470,12 +476,12 @@ class InCollectionEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		if (isset($e['booktitle'])) {
-			print ' In ';
+			$this->printString(' In ');
 			$this->printCreators($this->editors, 'bibtexEditors');
-			print '<span class="bibtexBooktitle">'.$e['booktitle'].'</span>.';
+			$this->printString('<span class="bibtexBooktitle">'.$e['booktitle'].'</span>.');
 		}
 		$this->printSeries($e, $usecomma);
 		$this->printVolume($e, $usecomma);
@@ -496,24 +502,24 @@ class ProceedingsPaperEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		if (isset($e['booktitle'])) {
-			print ' In ';
+			$this->printString(' In ');
 			$this->printCreators($this->editors, 'bibtexEditors');
-			print '<span class="bibtexBooktitle">'.$e['booktitle'];
+			$this->printString('<span class="bibtexBooktitle">'.$e['booktitle']);
 			if (isset($e['series'])) {
-				print ' ('.$e['series'].')';
+				$this->printString(' ('.$e['series'].')');
 			}
-			print '</span>';
+			$this->printString('</span>');
 			if (isset($e['volume']) && isset($e['number'])) {
-				print ' '.$e['volume'].'('.$e['number'].')';
+				$this->printString(' '.$e['volume'].'('.$e['number'].')');
 			} elseif (isset($e['volume'])) {
-				print ' '.$e['volume'];
+				$this->printString(' '.$e['volume']);
 			} elseif (isset($e['number'])) {
-				print ' ('.$e['number'].')';
+				$this->printString(' ('.$e['number'].')');
 			}
-			print '.';
+			$this->printString('.');
 		}
 		$this->printField($e, 'location', $usecomma);
 		$this->printDate($e, $usecomma);
@@ -531,7 +537,7 @@ class ManualEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		$this->printField($e, 'organization', $usecomma);
 		$this->printField($e, 'address', $usecomma);
@@ -550,7 +556,7 @@ class ThesisEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		$this->printField($e, 'type', $usecomma);
 		$this->printField($e, 'school', $usecomma);
@@ -573,7 +579,7 @@ class MiscellaneousEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		$this->printField($e, 'howpublished', $usecomma);
 		$this->printDate($e, $usecomma);
@@ -590,14 +596,14 @@ class ProceedingsEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->editors, 'bibtexEditors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		if (isset($e['volume']) && isset($e['number'])) {
-			print ' '.$e['volume'].'('.$e['number'].').';
+			$this->printString(' '.$e['volume'].'('.$e['number'].').');
 		} elseif (isset($e['volume'])) {
-			print ' '.$e['volume'];
-			print '.';
+			$this->printString(' '.$e['volume']);
+			$this->printString('.');
 		} elseif (isset($e['number'])) {
-			print ' ('.$e['number'].').';
+			$this->printString(' ('.$e['number'].').');
 		}
 		$usecomma = false;
 		$this->printField($e, 'organization', $usecomma);
@@ -617,14 +623,14 @@ class TechnicalReportEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		if (isset($e['type'])) {
-			print $usecomma ? ', ' : ' ';
+			$this->printString($usecomma ? ', ' : ' ');
 			if (isset($e['number'])) {
-				print $e['type'].' '.$e['number'];
+				$this->printString($e['type'].' '.$e['number']);
 			} else {
-				print $e['type'];
+				$this->printString($e['type']);
 			}
 			$usecomma = true;
 		} elseif (isset($e['number'])) {
@@ -645,7 +651,7 @@ class UnpublishedEntry extends Entry {
 	public function printEntry() {
 		$e =& $this->fields;
 		$this->printCreators($this->authors, 'bibtexAuthors');
-		print '<span class="bibtexTitle">'.$e['title'].'.</span> ';
+		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
 		$this->printField($e, 'note', $usecomma);
 		$this->printDate($e, $usecomma);
@@ -671,6 +677,10 @@ class BibliographyParser {
 	public static $users = NULL;
 	/** DokuWiki helper plugin reference */
 	public static $plugin = NULL;
+	/** DokuWiki current renderer reference */
+	public static $renderer = NULL;
+
+
 	public static function filterRaw( &$bibtex_entry ) {
 		unset($bibtex_entry['bibtexCitation']);
 		unset($bibtex_entry['bibtexEntryType']);
@@ -699,18 +709,38 @@ class BibliographyParser {
 		$args = func_get_args();
 		if (count($args) > 0) {
 			$args[0] = BibliographyParser::$lang[$args[0]];
-			call_user_func_array('printf', $args);
+			BibliographyParser::printString(call_user_func_array('sprintf', $args));
 		}
 	}
 
-	public static function renderUser( $username, $full_name ) {
-		list( $page_id, $title ) = BibliographyParser::$user[$username];
-		$class = 'wikilink1';
+	public static function printString( $string ) {
+		if( !is_null(BibliographyParser::$renderer) )
+			BibliographyParser::$renderer->doc .= $string;
+	}
 
-		if( !empty($page_id) )
-			return '<a href="'.wl($page_id)
-			        .'" class="'.$class.'" title="'.$title.'">'
-			        .$full_name.'</a>';
-		return $full_name;
+	public static function printCode( $raw, $filename='', $lang='bibtex' ) {
+		if( !is_null(BibliographyParser::$renderer) )
+			BibliographyParser::$renderer->code( $raw, $lang, $filename );
+	}
+
+	public static function printFile() {}
+
+	public static function formatUser( $userinfo, $full_name ) {
+
+		if( !empty($userinfo)  )
+			$local = 'bibtexKnown';
+
+		$result='<span class="bibtexAuthor '.$local.'">';
+		if( !empty($userinfo['page']) ) {
+			$class = 'wikilink1';
+			$result .='<a href="'.wl($userinfo['page'])
+			         .'" class="'.$class.'" title="'.$userinfo['title'].'">'
+			         .$full_name.'</a>';
+		} else {
+			$result .= $full_name;
+		}
+		$result.='</span>';
+
+		return $result;
 	}
 }

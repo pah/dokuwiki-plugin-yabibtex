@@ -67,17 +67,12 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
       $ns = $this->getConf('bibns');
       $data['file'] = cleanID($ns.':'.$data['file']);
 
-      if(!page_exists($data['file'])) {
-        msg( 'BibTeX error: Bibliography not found \''
-             .$data['file'].'\'', -1 );
-      }
-
       return $data;
     }
 
     public function render($mode, &$renderer, $data) {
 
-        if(empty($data))     return false;
+        if(empty($data)) return false;
 
         if($mode == 'metadata' ) {
           // add file dependency for caching
@@ -85,19 +80,30 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
             = @file_exists(wikiFN($data['file']));
         }
 
-        if($mode != 'xhtml') return false;
+        if($mode != 'xhtml' && $mode != 'code' ) return false;
 
         $bt =& plugin_load('helper','yabibtex');
         if(!$bt) return false;
 
-        if(!page_exists($data['file'])) {
-          msg( 'BibTeX error: Bibliography not found \''
-             .$data['file'].'\'', -1 );
-          return true;
+        if( $mode == 'xhtml' ) {
+          if(!page_exists($data['file'])) {
+            msg( 'BibTeX error: Bibliography not found \''
+               .$data['file'].'\'', -1 );
+            return true;
+          }
         }
 
         $bt->loadFile(wikiFN($data['file']));
-        $renderer->doc.=$bt->renderBibTeX();
+        $bt->sort( '-date,citation' );
+        $bt->renderBibTeX( $renderer, $mode );
+
+        if( $mode == 'xhtml' ) {
+          if( auth_quickaclcheck($data['file']) >= ACL_READ ) {
+            $renderer->doc.='<div class="bibtexPageSource">';
+            $renderer->internallink( $data['file'], "BibTeX source" );
+            $renderer->doc.='</div>';
+          }
+        }
 
         return true;
     }

@@ -69,16 +69,29 @@ function yabibtex_field_sorter($keys)
   };
 }
 
+function yabibtex_field_match_user( $e ) {
+  
+}
+
+function yabibtex_field_match($pattern = array()) {
+  return function( $e ) use ($pattern) {
+    
+
+  };
+}
+
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
     var $namespace  = '';      // namespace tag links point to
 
-    var $sort       = '';      // sort key
+    var $sortkey    = '';      // sort key
 
     var $data       = array(); // handle to loaded entries
 
     var $show_raw_bibtex = true;
     var $show_abstract   = true;
+
+    static $user_table = array();
 
     /**
      * Constructor gets default preferences and language strings
@@ -91,6 +104,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $this->setupLocale();
         $this->loadConfig();
 
+        BibliographyParser::$plugin=& $this;
         BibliographyParser::$lang  =& $this->lang;
         BibliographyParser::$conf  =& $this->conf;
         BibliographyParser::$users =& $this->user_table;
@@ -98,67 +112,68 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $this->bibns = $this->getConf('bibns');
         if (!$this->bibns) $this->bibns = getNS($ID);
         $this->sortkey = $this->getConf('sort');
+        $this->filter_raw = explode(',', $this->getConf('filter_raw') );
     }
 
     public function loadFile( $filename )
     {
         $bibtex_entries = BibTexParser::read($filename);
-        $entries = BibTexParser::parse($bibtex_entries);
-        $this->data = array($bibtex_entries, $entries);
+        $this->entries  = BibTexParser::parse($bibtex_entries);
         $this->_loadUsers();
-        return $this->data;
+        return $this->entries;
     }
 
     public function loadString( $string )
     {
         $bibtex_entries = BibTexParser::readString($string);
-        $entries = BibTexParser::parse($bibtex_entries);
-        $this->data = array($bibtex_entries, $entries);
+        $this->entries = BibTexParser::parse($bibtex_entries);
         $this->_loadUsers();
-        return $this->data;
-    }
-
-    private function _stripTitle( $longname ) {
-      // TODO
-      return $longname;
+        return $this->entries;
     }
 
     private function _loadUsers() {
+      global $auth;
+
       $ns    = $this->getConf('userns');
 
-      if( $this->getConf('autouserlink') ) {
-        // use retrieveUsers!
-        // TODO
+      if( $this->getConf('userlinkauto') ) {
+        $users = $auth->retrieveUsers();
       } else {
         $users = array();
-        foreach( $this->data[0] as $entry ) {
-          if( !empty($entry['users']) ) {
-            $users = array_merge( $users, explode(',', $entry['users']) ); 
+        foreach( $this->entries as $entry ) {
+          if( !empty($entry->users) ) {
+            $unames = explode(',', $entry->users);
+            foreach( $unames as $u ) {
+              $u = trim($u);
+              if (!isset($users[$u]) ) {
+                $users[$u] = $auth->getUserData($u);
+              }
+            }
           }
         }
-        $users = array_unique( $users );
       }
-
-      $user_table = array();
-      foreach( $users as $user ) {
-        $user = trim($user);
+      $user_table =& $this->user_table;
+      foreach( $users as $user => $info ) {
+        $name = $info['name'];
         $page = cleanID( $ns.':'.$user ); 
+        $title = $name;
         if( page_exists($page) ) {
           $title    = p_get_first_heading($page);
-          $name     = $this->_stripTitle($title); 
-          $user_table[$name] = compact( 'user', 'page', 'name', 'title' );
         }
+        $user_table[$name] = compact( 'user', 'page', 'name', 'title' );
       }
 
-      $this->user_table = $user_table;
       if( empty($user_table) )
         return false;
 
-      foreach( $this->data[1] as $e ) {
-              dbg($e);
-        foreach( array( $e->getAuthors(), $e->getEditors() ) as $list ) {
+      foreach( $this->entries as $e ) {
+        foreach( array( $e->authors, $e->editors ) as $list ) {
           if( !$list->isEmpty() )
-            foreach( $e->creators as $c ) {
+            foreach( $list->creators as $c ) {
+              $name =  (string) $c;
+              if( isset($user_table[$name]) ) {
+                $c->addInfo( $user_table[$name] );
+              }
             }
         }
       }
@@ -176,31 +191,51 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     }
 
     /**
-     * Produces a formatted BibTeX list.
+     * Produces a formatted BibTeX list of the current entry array.
      */
-    public function renderBibTeX() {
+    public function renderBibTeX( &$renderer = NULL, $mode='xhtml' ) {
 
-        if( empty($this->data) )
-          return '';
+        if( empty($this->entries) )
+          return NULL;
 
-        ob_start();
-
-        print '<dl class="bibtexList">'.DOKU_LF;
-        foreach ( $this->data[1] as $entry) {
-          $bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
-                                     , trim($entry->citation) ).'.bib';
-          $custom_text = ($this->show_raw_bibtex)
-              ? $this->render( '<code bibtex>' // '.$bibfilename.'>'
-                .Entry::getRaw(
-                   $this->data[0][$entry->citation] )
-                .'</code>' )
-              : false;
-          print '<dd>';
-          $entry->printFormatted( $custom_text, $this->show_abstract );
-          print '</dd>'.DOKU_LF;
+        $temp_render = false;
+        if( is_null($renderer) ) {
+          $renderer =& p_get_renderer($mode);
+          $temp_render = true;
+          $renderer->reset();
         }
-        print '</dl>'.DOKU_LF;
-        return ob_get_clean();
+
+        BibliographyParser::$renderer =& $renderer;
+
+        if( $mode == 'code') {
+          if( $this->show_raw_bibtex)
+            foreach ( $this->entries as $entry) {
+              $bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
+                                         , trim($entry->citation) ).'.bib';
+              BibliographyParser::printCode($entry->getRaw(),$bibfilename);
+            }
+        } else if ($mode == 'xhtml' ) {
+          $renderer->doc.= '<dl class="bibtexList">'.DOKU_LF;
+          $even = 0;
+          foreach ( $this->entries as $entry) {
+            $renderer->doc.= '<dd class="'.($even ? 'even' : 'odd').'">';
+            $entry->printFormatted( $this->show_raw_bibtex, $this->show_abstract, ($even ? 'even':'odd') );
+            $renderer->doc.= '</dd>'.DOKU_LF;
+            $even = $even ? 0 : 1;
+          }
+          $renderer->doc.= '</dl>'.DOKU_LF;
+        }
+
+        if( $temp_render == true ) {
+          // Post process and return the output
+          $data = array($mode,& $renderer->doc);
+          trigger_event('RENDERER_CONTENT_POSTPROCESS',$data);
+          $result = $renderer->doc;
+          BibliographyParser::$renderer = NULL;
+          return $result;
+        }
+
+        return true;
     }
 }
 
