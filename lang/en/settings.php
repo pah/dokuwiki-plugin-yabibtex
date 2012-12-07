@@ -6,13 +6,24 @@
  */
 
 // keys need to match the config setting name
-$lang['bibns']  = 'default namespace for BibTeX files';
-$lang['userns'] = 'namespace for author pages';
-$lang['tagns']  = 'namespace for tag links';
 
-$lang['sort']   = 'default sort key(s) '
+$lang['sort']   = 'Default sort key(s) '
                  .'(comma-separated field specifiers, '
                  .'preprended with \'^\' for reversed ordering)';
+
+$lang['rowmarkers'] = 'Add alternating \'even\'/\'odd\' CSS classes '
+                     .'to BibTeX list entries for row highlighting '
+                     .'(can be overridden)';
+
+$lang['show_abstract'] = 'Add box with Abstract, if present; '
+                        .'foldable, when Folding plugin is available '
+                        .'(can be overridden)';
+
+$lang['show_bibtex']   = 'Add code box with downloadable BibTeX source; '
+                        .'foldable, when Folding plugin is available '
+                        .'(can be overridden)';
+
+$lang['filter_raw'] = 'Suppress fields in downloadable BibTeX export';
 
 $lang['userlink']   = 'Link author names to user pages';
 $lang['userlink_o_off']      = 'No author links';
@@ -21,8 +32,12 @@ $lang['userlink_o_explicit'] = 'Only link authors listed in \'users\' field of B
 
 $lang['userfind']   = 'Determine user names for author links';
 $lang['userfind_o_users']= 'Retrieve full names from Auth backend';
-$lang['userfind_o_pages']= 'Retrieve full names from pages in \'userns\' namespace';
-$lang['userfind_o_both'] = 'Merge Auth backend and pages lists';
+$lang['userfind_o_pages']= 'Retrieve full names from pages in user namespace';
+$lang['userfind_o_both'] = 'Merge Auth backend and pages list';
 
-$lang['filter_raw'] = 'Suppress fields in BibTeX export';
+$lang['bibns']  = '(Default) namespace for BibTeX files '
+                 .'(can be overridden)';
+$lang['userns'] = 'Namespace for author pages';
+$lang['tagns']  = 'Namespace for tag links (requires Tag plugin)';
+
 //Setup VIM: ex: et ts=4 :

@@ -51,7 +51,7 @@ $lang['date_format_yearmonth']    = '%2$s %1$d';
 // $lang['eighteenth']    = 'eighteenth';
 // $lang['nineteenth']    = 'nineteenth';
 // $lang['twentieth']     = 'twentieth';
-// 
+//
 // $lang['January']   = 'January';
 // $lang['February']  = 'February';
 // $lang['March']     = 'March';

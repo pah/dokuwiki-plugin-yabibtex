@@ -48,7 +48,7 @@ function yabibtex_field_sorter($keys)
     $key = substr($key,1);
   }
 
-  if( $key=='date' ) {
+  if($key=='date') {
     $asc = $asc ? '' : '^';
     $y_cmp = yabibtex_field_sorter($asc.'year');
     $m_cmp = yabibtex_field_sorter($asc.'month');
@@ -60,7 +60,7 @@ function yabibtex_field_sorter($keys)
     };
   }
 
-  return function( $a, $b) use ($key,$asc) {
+  return function($a, $b) use ($key,$asc) {
     $before = $asc ? -1 :  1;
     $after  = $asc ?  1 : -1;
     $f1 = $a->$key;
@@ -70,16 +70,33 @@ function yabibtex_field_sorter($keys)
   };
 }
 
-function yabibtex_field_match_user( $e ) {
+function yabibtex_field_match_author( $e ) {
   
 }
 
-function yabibtex_field_match($pattern = array()) {
+function yabibtex_field_match_pattern($pattern = array()) {
   return function( $e ) use ($pattern) {
-    
-
+    foreach( $pattern as $k => $va ) {
+      if( !is_array( $va ) ) {
+        $va = array($va);
+      }
+      $result = false;
+      foreach( $va as $v ) {
+        if( function_exists( 'yabibtex_field_match_'.$k ) ) {
+          if( call_user_func( 'yabibtex_field_match_'.$k, $v ) === FALSE )
+            continue;
+        } else if( stripos( $v, $e->$k ) === FALSE ) {
+          continue;
+        }
+        $result = true;
+      }
+      if(!$result)
+        return false;
+    }
+    return true;
   };
 }
+
 
 // call_user_func_array($func, array(&$data,$base,$file,'f',$lvl,$opts));
 function yabibtex_init_user_page( &$data, $base, $file, $type, $opts )
@@ -115,17 +132,10 @@ function yabibtex_init_user_page( &$data, $base, $file, $type, $opts )
 
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
-    var $namespace  = '';      // namespace tag links point to
-
+    var $filter_raw = NULL;
     var $sortkey    = '';      // sort key
-
-    var $data       = array(); // handle to loaded entries
-
-    var $show_raw_bibtex = true;
-    var $show_abstract   = true;
-
-    static $user_table   = NULL;
-    static $author_table = array();
+    var $user_table   = NULL;
+    var $author_table = array();
 
     /**
      * Constructor gets default preferences and language strings
@@ -166,7 +176,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     }
 
     private function _initUsers() {
-        $user_table =& helper_plugin_yabibtex::$user_table;
+        $user_table =& $this->user_table;
 
         // preload known users (done)
         if( is_array( $user_table ) )
@@ -205,7 +215,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
     private function _findUserInfo( $user ) {
       global $auth;
-      $users  =& helper_plugin_yabibtex::$user_table;
+      $users  =& $this->user_table;
       $userns =  $this->getConf('userns');
 
       if( isset( $users[$user] ) )
@@ -238,13 +248,13 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
     private function _findAuthorInfo( &$creator, $user=NULL )
     {
-      $user_table   =& helper_plugin_yabibtex::$user_table;
+      $user_table   =& $this->user_table;
 
       $name = (string)$creator;
 
       // search automatic author<->user matching
       if( $user === NULL ) {
-        $author_table =& helper_plugin_yabibtex::$author_table;
+        $author_table =& $this->author_table;
         if( isset( $author_table[$name] ) ) {
           $creator->addInfo( $author_table[$name] );
           return true;
@@ -270,14 +280,6 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       }
       $creator->addInfo($item);
       return isset($item['name']);
-    }
-
-    private function _loadUsers() {
-      global $auth;
-
-      if( $this->getConf('userlink') == "auto" ) {
-        $this->_initUsers();
-      }
     }
 
     private function _findAuthors( $userlink, &$entry ) {
@@ -327,6 +329,14 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       }
     }
 
+    private function _loadUsers() {
+      global $auth;
+
+      if( $this->getConf('userlink') == "auto" ) {
+        $this->_initUsers();
+      }
+    }
+
     function sort( $keys ) {
        if( empty($this->entries) )
          return true;
@@ -355,8 +365,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $renderer->reset();
         }
 
-        if( !isset( $flags['rowcolors'] ) )
-          $flags['rowcolors'] = $this->getConf( 'rowcolors' );
+        if( !isset( $flags['rowmarkers'] ) )
+          $flags['rowmarkers'] = $this->getConf( 'rowmarkers' );
         if( !isset( $flags['bibtex'] ) )
           $flags['bibtex'] = $this->getConf( 'show_bibtex' );
         if( !isset( $flags['abstract'] ) )
@@ -366,29 +376,28 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
         BibliographyParser::$renderer =& $renderer;
 
-        if( $mode == 'code')
+        if( $mode == 'code' && $flags['bibtex'] )
         {
-          if( $flags['bibtex'] )
-            foreach ( $this->entries as $entry) {
-              $bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
-                                         , trim($entry->citation) ).'.bib';
-              BibliographyParser::printCode(
-                $entry->getRaw($flags['filter_raw']),$bibfilename
-              );
-            }
+          foreach ( $this->entries as $entry) {
+            $bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
+                                       , trim($entry->citation) ).'.bib';
+            BibliographyParser::printCode(
+              $entry->getRaw($flags['filter_raw']),$bibfilename
+            );
+          }
         }
         else if ($mode == 'xhtml' )
         {
           $renderer->doc.= '<dl class="bibtexList">'.DOKU_LF;
           $even=0; $oldclass = $flags['class'];
-          if ($flags['rowcolors'] )
+          if ($flags['rowmarkers'] )
             $flags['class']=$oldclass.' even';
           foreach ( $this->entries as $entry) {
             $renderer->doc.= '<dd class="'.$even.'">';
             $this->_findAuthors( $flags['userlink'], $entry );
             $entry->printFormatted( $flags );
             $renderer->doc.= '</dd>'.DOKU_LF;
-            if ($flags['rowcolors'] )
+            if ($flags['rowmarkers'] )
               $flags['class'] = $oldclass
                 . (($even=($even+1)%2) ? ' odd' : ' even');
           }

@@ -455,6 +455,11 @@ class InBookEntry extends Entry {
 			$this->printCreators($this->authors, 'bibtexAuthors');
 		$this->printString('<span class="bibtexTitle">'.$e['title'].'.</span> ');
 		$usecomma = false;
+		if (isset($e['booktitle'])) {
+			$this->printString(' In ');
+			$this->printCreators($this->editors, 'bibtexEditors');
+			$this->printString('<span class="bibtexBooktitle">'.$e['booktitle'].'</span>.');
+		}
 		$this->printField($e, 'type', $usecomma);
 		$this->printSeries($e, $usecomma);
 		$this->printVolume($e, $usecomma);
