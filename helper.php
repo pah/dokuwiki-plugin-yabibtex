@@ -25,34 +25,6 @@ require_once DOKU_INC.'inc/infoutils.php';
 require_once DOKU_INC.'inc/search.php';
 
 
-function yabibtex_field_match_author( $e ) {
-  
-}
-
-function yabibtex_field_match_pattern($pattern = array()) {
-  return function( $e ) use ($pattern) {
-    foreach( $pattern as $k => $va ) {
-      if( !is_array( $va ) ) {
-        $va = array($va);
-      }
-      $result = false;
-      foreach( $va as $v ) {
-        if( function_exists( 'yabibtex_field_match_'.$k ) ) {
-          if( call_user_func( 'yabibtex_field_match_'.$k, $v ) === FALSE )
-            continue;
-        } else if( stripos( $v, $e->$k ) === FALSE ) {
-          continue;
-        }
-        $result = true;
-      }
-      if(!$result)
-        return false;
-    }
-    return true;
-  };
-}
-
-
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
     var $filter_raw = NULL;
@@ -84,16 +56,72 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
     public function loadFile( $filename, $filter=NULL )
     {
+        $filter_func = $this->_createFilter($filter);
         $bibtex_entries = BibTexParser::read($filename);
-        $this->entries  = BibTexParser::parse($bibtex_entries, $filter);
+        $this->entries  = BibTexParser::parse($bibtex_entries, $filter_func);
         return $this->entries;
     }
 
     public function loadString( $string, $filter = NULL )
     {
+        $filter_func = $this->_createFilter($filter);
         $bibtex_entries = BibTexParser::readString($string);
-        $this->entries  = BibTexParser::parse($bibtex_entries, $filter);
+        $this->entries  = BibTexParser::parse($bibtex_entries, $filter_func);
         return $this->entries;
+    }
+
+    private function _createFieldFilter( $key, $pattern ) {
+      if( empty($key) )     return NULL;
+      if( empty($pattern) ) return NULL;
+
+      if( !is_array($pattern) ) {
+        $func = method_exists( $this, '_field_match_'.$key )
+                  ? array( $this, '_field_match_'.$key )
+                  : 'stripos';
+        return function( $e ) use($key,$func,$pattern) {
+          if( is_null($e->$key) ) return false;
+          return call_user_func( $func, $e->$key, $pattern ) !== false;
+        };
+      } else {
+        $marray = array();
+        foreach( $pattern as $p ) {
+          $mf = $this->_createFieldFilter($key,$p);
+          if( $mf!== NULL ) $marray[] = $mf;
+        }
+        // disjunction of all applied sub-filters
+        return function( $e ) use($marray) {
+          foreach( $marray as $m ) {
+            if( call_user_func( $m, $e ) !== false )
+              return true;
+          }
+          return false;
+        };
+      }
+    }
+
+    private function _createFilter( $filter ) {
+
+      if( !is_array($filter) || count($filter) == 0 )
+        return NULL;
+
+      $marray = array();
+      foreach( $filter as $f ) {
+        if( strpos($f['pattern'],'|') ) {
+          $f['pattern'] = explode('|',$f['pattern']);
+          array_walk( $f['pattern'], 'trim' );
+        }
+        $mf = $this->_createFieldFilter( $f['key'], $f['pattern'] );
+        if( $mf!== NULL ) $marray[] = $mf;
+      }
+
+      // conjunction of all applied filters
+      return function( $e ) use($marray) {
+          foreach( $marray as $m ) {
+            if( call_user_func( $m, $e ) === false )
+              return false;
+          }
+          return true;
+        };
     }
 
     public function _version_check(){
