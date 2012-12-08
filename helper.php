@@ -173,8 +173,46 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         return $this->entries;
     }
 
+    public function parseOptions( $opts ) {
+      $flags = array();
+      $opts = explode( '&', $opts );
+      foreach( $opts as $o )
+      {
+        $o = trim($o);
+        if( empty($o) ) continue;
+        if( preg_match( '/^(?i:((no)?([a-z0-9_-]*)))(?U:\s*=\s*(.*))?$/',$o,$m )  )
+        {
+          if( isset($m[4]) ) // assignment option, store key/
+          {
+            switch( $m[1] )
+            {
+            case 'sort':            // sort option
+            case 'class':           // set CSS class
+            case 'userlink':        // (off|auto|explicit)
+              $flags[$m[1]]=$m[4]; 
+              break;
+            default:
+              $filter[$m[1]]=$m[4]; // value filter
+            }
+          }
+          else // flag option
+          {
+            $flags[$m[3]]=($m[2]=='no')?0:1;
+          }
+        } else {
+          msg('BibTeX: Invalid option syntax ignored: "'.hsc($o).'"',-1);
+        }
+        // else ignore invalid option
+      }
+      if( count($filter)>0 )
+        $flags['filter'] = $filter;
+
+      return $flags;
+    }
+
     private function _initUsers() {
         global $auth;
+
         $user_table =& $this->user_table;
 
         // preload known users (done)
@@ -359,6 +397,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $renderer->reset();
         }
 
+        if( !isset( $flags['sort'] ) )
+          $flags['sort'] = $this->getConf( 'sort' );
         if( !isset( $flags['rowmarkers'] ) )
           $flags['rowmarkers'] = $this->getConf( 'rowmarkers' );
         if( !isset( $flags['bibtex'] ) )
@@ -367,6 +407,9 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $flags['abstract'] = $this->getConf( 'show_abstract' );
         if( !isset( $flags['userlink'] ) )
           $flags['userlink'] = $this->getConf( 'userlink' );
+
+        if( $flags['abstract']===0 )
+          $flags['filter_raw'][] = 'abstract';
 
         BibliographyParser::$renderer =& $renderer;
 
