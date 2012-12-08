@@ -33,16 +33,16 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
     }
 
     public function getSort() {
-        return 818;
+        return 313;
     }
 
     public function connectTo($mode) {
-        $this->Lexer->addEntryPattern('<bibtex[[:space:]&]*[^>]*>'
+        $this->Lexer->addEntryPattern('<(?i:bibtex)(?sU:\s*&.*)?>'
                                      , $mode, 'plugin_yabibtex_inline' );
     }
 
     public function postConnect() {
-        $this->Lexer->addExitPattern('</bibtex>','plugin_yabibtex_inline');
+        $this->Lexer->addExitPattern('</(?i:bibtex)>','plugin_yabibtex_inline');
     }
 
     public function handle($match, $state, $pos, &$handler)
@@ -55,26 +55,16 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
         $data = false;
 
         if ($state == DOKU_LEXER_ENTER){
-          $flags['sort']    = '-date,citation';
-          $flags['abstract']= true;
-          $flags['bibtex']  = true;
-
-          $options = substr($match, strlen('<bibtex'),-1);
-          if( !empty($options) ) {
-          }
-
-          if(!$flags['abstract'])
-            $flags['filter_raw'][] = 'abstract';
-
-          $this->flags[ $pos+strlen($match) ] = $flags;
-
+          $opts = substr($match, strlen('<bibtex'),-1); 
+          // store flags for body handling
+          $this->flags[ $pos+strlen($match) ] =
+              $this->helper->parseOptions( $opts );
         } else if ($state == DOKU_LEXER_UNMATCHED) {
             $bibtex=trim($match);
             if( !empty($bibtex) )
                 $data = array( 'bibtex' => $bibtex
                              , 'flags' => $this->flags[$pos] );
             unset( $this->flags[$pos] );
-
         }
         return $data;
     }

@@ -18,7 +18,9 @@ require_once DOKU_PLUGIN.'syntax.php';
 
 class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
 {
-    public function getType() {
+     var $helper = false;
+
+     public function getType() {
         return 'substition';
     }
 
@@ -27,53 +29,31 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
     }
 
     public function getSort() {
-        return 818;
+        return 313;
     }
 
     public function connectTo($mode) {
-        //$this->Lexer->addSpecialPattern('{{bibliography>.+?}}',$mode,'plugin_yabibtex_file');
-        $this->Lexer->addSpecialPattern('<bibliography [^>]+>',$mode,'plugin_yabibtex_file');
+      $this->Lexer->addSpecialPattern( '\{\{(?i:bibtex)>(?sU:.*)\}\}'
+                                     , $mode, 'plugin_yabibtex_file');
     }
 
-    public function handle($match, $state, $pos, &$handler){
 
-      $data = array();
-      $opts = trim(substr( $match, strlen('<bibliography '),-1));
-      $opts = preg_replace(array('/[[:blank:]]+/', '/\s+/'), " ", $opts);
-      $optv = explode( ' ', $opts );
+    public function handle($match, $state, $pos, &$handler)
+    {
+      if($this->helper===false)
+        $this->helper =& plugin_load('helper','yabibtex');
+      if(!$this->helper)
+        return false;
 
-      $first_plain=false;
-      foreach( $optv as $v ) {
-        $m = array();
-        if( preg_match( '/([[:alnum:]+_-]+)(?:=(.+))?$/', $v, $m ) ) {
-          if(empty($m[2])) {
-            if(!$first_plain) {
-              $m[2] = $m[1];
-              $m[1] = 'file';
-            } else {
-              $m[2] = TRUE;
-            }
-            $first_plain=true;
-          }
-          $data[$m[1]] = $m[2];
-        }
-      }
-
-      if( empty($data['file']) ) {
-        msg( 'BibTeX error: No bibliography file given! (\''.$opts.'\')', -1 );
+      $args = trim(substr( $match, strlen('{{bibtex>'),-2));
+      $argv = NULL;
+      if( !preg_match( '/^([^&]+)((?:&[^&]+)*)\s*$/', $args, $argv ) ) {
+        msg( 'BibTeX error: No bibliography file given! (\''.hsc($args).'\')', -1 );
         return false;
       }
 
-      $flags['sort']    = '-date,citation';
-      $flags['abstract']= true;
-      $flags['bibtex']  = true;
-
-      if(!$flags['abstract'])
-        $flags['filter_raw'][] = 'abstract';
-
-      $ns = $this->getConf('bibns');
-      $data['file']  = cleanID($ns.':'.$data['file']);
-      $data['flags'] = $flags;
+      $data['file']  = cleanID($this->getConf('bibns').':'.trim($argv[1]));
+      $data['flags'] = $this->helper->parseOptions($argv[2]);
 
       return $data;
     }
