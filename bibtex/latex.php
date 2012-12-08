@@ -263,8 +263,8 @@ Symbol::set_table(array(
 function latex2plain($text) {
 	$text = str_replace(Letter::$search, Letter::$replace, $text);
 	$text = str_replace(Symbol::$search, Symbol::$replace, $text);
-	$search = array('--','``','\'\'',',,');
-	$replacement = array('–','“','”','„');
+	$search = array('--','``','\'\'',',,','~');
+	$replacement = array('–','“','”','„',"\xc2\xa0");
 	$text = str_replace($search, $replacement, $text);
 	$text = preg_replace('/\{([^{}]*)\}/', '\1', $text);
 	return $text;
