@@ -173,27 +173,40 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         return $this->entries;
     }
 
+    public function _version_check(){
+      if( $this->has_closures ) return true;
+      $php_version = explode( '.', PHP_VERSION );
+      $this->has_closures = ($php_version[0]*10000 + $php_version[1]*100) >= 50300 ; 
+      return $this->has_closures;
+    }
+
     public function parseOptions( $opts ) {
       $flags  = array();
       $filter = array();
-      $opts = explode( '&', $opts );
+      $opts   = explode( '&', $opts );
       foreach( $opts as $o )
       {
         $o = trim($o);
         if( empty($o) ) continue;
-        if( preg_match( '/^(?i:((no)?([a-z0-9_-]*)))(?U:\s*=\s*(.*))?$/',$o,$m )  )
+        if( preg_match( '/^(?i:((no)?([a-z0-9_-]*)))(?:\s*=\s*(.*))?$/',$o,$m )  )
         {
           if( isset($m[4]) ) // assignment option, store key/
           {
             switch( $m[1] )
             {
             case 'sort':            // sort option
+              if( !$this->_version_check() ) {
+                $m[4] = false;
+              }
             case 'class':           // set CSS class
             case 'userlink':        // (off|auto|explicit)
               $flags[$m[1]]=$m[4]; 
               break;
             default:
-              $filter[$m[1]]=$m[4]; // value filter
+              if( $this->_version_check() ) {
+                $filter[] = array( 'key'     => $m[1] // value filter
+                                 , 'pattern' => trim($m[4]) );
+              }
             }
           }
           else // flag option
@@ -205,9 +218,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         }
         // else ignore invalid option
       }
-      if( count($filter)>0 )
-        $flags['filter'] = $filter;
-
+      $flags['filter'] = $filter;
       return $flags;
     }
 
@@ -374,8 +385,6 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
        if( empty($this->entries) )
          return true;
        if(empty($keys))
-         $keys = $this->sortkey;
-       if(empty($keys))
         return true;
 
        return usort( $this->entries, yabibtex_field_sorter($keys) );
@@ -398,8 +407,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $renderer->reset();
         }
 
-        if( !isset( $flags['sort'] ) )
-          $flags['sort'] = $this->getConf( 'sort' );
+        if( !isset( $flags['sort']) && $this->_version_check() )
+          $flags['sort'] =  $this->getConf( 'sort' );
         if( !isset( $flags['rowmarkers'] ) )
           $flags['rowmarkers'] = $this->getConf( 'rowmarkers' );
         if( !isset( $flags['bibtex'] ) )
