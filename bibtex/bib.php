@@ -73,8 +73,9 @@ class BibTexParser extends BibliographyParser {
 	/**
 	* Parses raw BibTeX entries into Entry class objects.
 	*/
-	public static function parse($bibtex_entries) {
+	public static function parse($bibtex_entries, $filter=NULL) {
 		$entries = array();
+
 		foreach ($bibtex_entries as $bibtex_entry) {
 			// instantiate proper entry class based on entry type
 			$bibtex_entry_type = strtoupper($bibtex_entry['bibtexEntryType']);
@@ -113,6 +114,11 @@ class BibTexParser extends BibliographyParser {
 					$entry->raw_fields['month'] = $month;
 				}
 			}
+
+			// skip, if filter does not match
+			if( is_callable($filter) && call_user_func( $filter, $entry ) === false )
+				continue;
+
 			// add newly created entry to list of entries
 			$entries[] = $entry;
 		}

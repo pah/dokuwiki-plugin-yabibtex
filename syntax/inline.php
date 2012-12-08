@@ -74,7 +74,7 @@ class syntax_plugin_yabibtex_inline extends DokuWiki_Syntax_Plugin
         if(!$this->helper)
           return false;
 
-        $this->helper->loadString($data['bibtex']);
+        $this->helper->loadString($data['bibtex'],$data['flags']['filter']);
         $this->helper->sort( $data['flags']['sort'] );
         $this->helper->renderBibTeX( $data['flags'], $renderer, $mode );
         return true;

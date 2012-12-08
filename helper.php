@@ -159,22 +159,23 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $this->filter_raw = explode(',', $this->getConf('filter_raw') );
     }
 
-    public function loadFile( $filename )
+    public function loadFile( $filename, $filter=NULL )
     {
         $bibtex_entries = BibTexParser::read($filename);
-        $this->entries  = BibTexParser::parse($bibtex_entries);
+        $this->entries  = BibTexParser::parse($bibtex_entries, $filter);
         return $this->entries;
     }
 
-    public function loadString( $string )
+    public function loadString( $string, $filter = NULL )
     {
         $bibtex_entries = BibTexParser::readString($string);
-        $this->entries = BibTexParser::parse($bibtex_entries);
+        $this->entries  = BibTexParser::parse($bibtex_entries, $filter);
         return $this->entries;
     }
 
     public function parseOptions( $opts ) {
-      $flags = array();
+      $flags  = array();
+      $filter = array();
       $opts = explode( '&', $opts );
       foreach( $opts as $o )
       {

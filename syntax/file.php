@@ -81,7 +81,7 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
           }
         }
 
-        $bt->loadFile(wikiFN($data['file']));
+        $bt->loadFile(wikiFN($data['file'],$data['flags']['filter']));
         $bt->sort( $data['flags']['sort']  );
         $bt->renderBibTeX( $data['flags'], $renderer, $mode );
 
