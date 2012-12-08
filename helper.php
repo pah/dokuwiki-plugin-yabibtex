@@ -53,38 +53,6 @@ function yabibtex_field_match_pattern($pattern = array()) {
 }
 
 
-// call_user_func_array($func, array(&$data,$base,$file,'f',$lvl,$opts));
-function yabibtex_init_user_page( &$data, $base, $file, $type, $opts )
-{
-  global $conf;
-
-  // ignore directories
-  if( $type == 'd' ) {
-    if(!$opts['depth']) return true; // recurse forever
-    $parts = explode('/',ltrim($file,'/'));
-    if(count($parts) == $opts['depth']) return false; // depth reached
-    return true;
-  }
-
-  //only search txt files
-  if(substr($file,-4) != '.txt') return true;
-
-  $item['page'] = pathID($file);
-
-  if(!$opts['skipacl'] && auth_quickaclcheck($item['page']) < AUTH_READ)
-    return false;
-
-  $user = noNS($item['page']);
-
-  if( $user == $conf['start'] || isHiddenPage($item['page']) )
-    return false;
-
-  $item['name'] = $item['title'] = p_get_first_heading($item['page']);
-
-  $data[$user] = $item;
-  return true;
-}
-
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
     var $filter_raw = NULL;
@@ -177,6 +145,38 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       return $flags;
     }
 
+    // call_user_func_array($func, array(&$data,$base,$file,'f',$lvl,$opts));
+    function _initUserPage( &$data, $base, $file, $type, $opts )
+    {
+      global $conf;
+
+      // ignore directories
+      if( $type == 'd' ) {
+        if(!$opts['depth']) return true; // recurse forever
+        $parts = explode('/',ltrim($file,'/'));
+        if(count($parts) == $opts['depth']) return false; // depth reached
+        return true;
+      }
+
+      //only search txt files
+      if(substr($file,-4) != '.txt') return true;
+
+      $item['page'] = pathID($file);
+
+      if(!$opts['skipacl'] && auth_quickaclcheck($item['page']) < AUTH_READ)
+        return false;
+
+      $user = noNS($item['page']);
+
+      if( $user == $conf['start'] || isHiddenPage($item['page']) )
+        return false;
+
+      $item['name'] = $item['title'] = p_get_first_heading($item['page']);
+
+      $data[$user] = $item;
+      return true;
+    }
+
     private function _initUsers() {
         global $auth;
 
@@ -196,7 +196,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
           // search(&$data,$base,$func,$opts,$dir='',$lvl=1,$sort=true)
           search( $users_page, $conf['datadir']
-                , 'yabibtex_init_user_page'
+                , array($this,'_initUserPage')
                 , array() /* opts */
                 , $userns
                 , 1, false );
