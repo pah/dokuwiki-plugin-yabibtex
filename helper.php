@@ -163,7 +163,6 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     {
         $bibtex_entries = BibTexParser::read($filename);
         $this->entries  = BibTexParser::parse($bibtex_entries);
-        $this->_loadUsers();
         return $this->entries;
     }
 
@@ -171,18 +170,18 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     {
         $bibtex_entries = BibTexParser::readString($string);
         $this->entries = BibTexParser::parse($bibtex_entries);
-        $this->_loadUsers();
         return $this->entries;
     }
 
     private function _initUsers() {
+        global $auth;
         $user_table =& $this->user_table;
 
         // preload known users (done)
         if( is_array( $user_table ) )
           return;
 
-        $user_pages = array(); 
+        $users_page = array(); 
         $user_auth  = array(); 
         $userfind   = $this->getConf('userfind');
         $userns     = $this->getConf('userns');
@@ -210,6 +209,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
               $users_auth[$k]['title'] = $users_page[$k]['title'];
           }
         }
+
         $user_table = array_merge( $users_page, $users_auth );
     }
 
@@ -290,6 +290,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       if( $userlink == 'explicit' && $entry->users === NULL )
         return false;
 
+      $this->_initUsers();
+
       $referenced = array();
       $overridden = array(); // explicit IDs for authors
 
@@ -326,14 +328,6 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           }
         }
         $l = 'e';
-      }
-    }
-
-    private function _loadUsers() {
-      global $auth;
-
-      if( $this->getConf('userlink') == "auto" ) {
-        $this->_initUsers();
       }
     }
 
