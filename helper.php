@@ -24,51 +24,6 @@ require_once DOKU_PLUGIN.'syntax.php';
 require_once DOKU_INC.'inc/infoutils.php';
 require_once DOKU_INC.'inc/search.php';
 
-function yabibtex_field_sorter($keys)
-{
-  $keyarray = explode(',',$keys);
-  if( count($keyarray) > 1) {
-    foreach( $keyarray as $key ) {
-      $cmparray[]=yabibtex_field_sorter($key);
-    }
-    return function( $a, $b ) use($cmparray) {
-      foreach( $cmparray as $cmp ) {
-        $result=call_user_func( $cmp, $a, $b );
-        if( $result!=0 )
-          return $result;
-      }
-      return 0;
-    };
-  }
-
-  $asc=true;
-  $key = trim($keyarray[0]);
-  if( substr($key,0,1) == '^' ) {
-    $asc = false;
-    $key = substr($key,1);
-  }
-
-  if($key=='date') {
-    $asc = $asc ? '' : '^';
-    $y_cmp = yabibtex_field_sorter($asc.'year');
-    $m_cmp = yabibtex_field_sorter($asc.'month');
-    return function( $a, $b) use ($y_cmp,$m_cmp) {
-      $y = call_user_func($y_cmp,$a,$b);
-      if($y==0)
-        return call_user_func($m_cmp,$a,$b);
-      return $y;
-    };
-  }
-
-  return function($a, $b) use ($key,$asc) {
-    $before = $asc ? -1 :  1;
-    $after  = $asc ?  1 : -1;
-    $f1 = $a->$key;
-    $f2 = $b->$key;
-    if ($f1 == $f2 ) return 0;
-    return ($f1 < $f2) ? $before : $after;
-  };
-}
 
 function yabibtex_field_match_author( $e ) {
   
@@ -381,13 +336,59 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       }
     }
 
+    function _create_field_sorter($keys)
+    {
+      $keyarray = explode(',',$keys);
+      if( count($keyarray) > 1) {
+        foreach( $keyarray as $key ) {
+          $cmparray[]=$this->_create_field_sorter($key);
+        }
+        return function( $a, $b ) use($cmparray) {
+          foreach( $cmparray as $cmp ) {
+            $result=call_user_func( $cmp, $a, $b );
+            if( $result!=0 )
+              return $result;
+          }
+          return 0;
+        };
+      }
+
+      $asc=true;
+      $key = trim($keyarray[0]);
+      if( substr($key,0,1) == '^' ) {
+        $asc = false;
+        $key = substr($key,1);
+      }
+
+      if($key=='date') {
+        $asc = $asc ? '' : '^';
+        $y_cmp = $this->_create_field_sorter($asc.'year');
+        $m_cmp = $this->_create_field_sorter($asc.'month');
+        return function( $a, $b) use ($y_cmp,$m_cmp) {
+          $y = call_user_func($y_cmp,$a,$b);
+          if($y==0)
+            return call_user_func($m_cmp,$a,$b);
+          return $y;
+        };
+      }
+
+      return function($a, $b) use ($key,$asc) {
+        $before = $asc ? -1 :  1;
+        $after  = $asc ?  1 : -1;
+        $f1 = $a->$key;
+        $f2 = $b->$key;
+        if ($f1 == $f2 ) return 0;
+        return ($f1 < $f2) ? $before : $after;
+      };
+    }
+
     function sort( $keys ) {
        if( empty($this->entries) )
          return true;
        if(empty($keys))
         return true;
 
-       return usort( $this->entries, yabibtex_field_sorter($keys) );
+       return usort( $this->entries, $this->_create_field_sorter($keys) );
     }
 
     /**
