@@ -246,14 +246,20 @@ class Entry {
 
 	protected static function printLink($entry,$field,&$usecomma) {
 		if (isset($entry[$field])) {
-			if( $field == 'doi' ) {
+			if( $field == 'doi' && !preg_match('|^https?://|', $entry[$field]) ) {
 				$entry[$field] = 'http://dx.doi.org/'.$entry[$field];
 			}
 			if ($usecomma) {
 				Entry::printString(', ');
 			}
-			Entry::printString('<a class="bibtexLink urlextern" target="_blank" href="'
-			      .$entry[$field].'">'.$field.'</a>');
+			if( $field == 'file') {
+				// local media link
+				BibliographyParser::printMediaLink($entry[$field]
+				    , BibliographyParser::_($field) );
+			} else {
+				Entry::printString('<a class="bibtexLink urlextern" target="_blank" href="'
+				    .$entry[$field].'">'.BibliographyParser::_($field).'</a>');
+			}
 			$usecomma = false;
 		}
 	}
@@ -730,6 +736,19 @@ class BibliographyParser {
 	public static function printCode( $raw, $filename='', $lang='bibtex' ) {
 		if( !is_null(BibliographyParser::$renderer) )
 			BibliographyParser::$renderer->code( $raw, $lang, $filename );
+	}
+
+	public static function printMediaLink( $file, $title=NULL ) {
+		if( !is_null(BibliographyParser::$renderer) ) {
+			if( !preg_match('|^https?://|', $entry[$field] )  ) {
+				$medians = BibliographyParser::$conf['medians'];
+				if( substr($file,0,1) != ':' )
+					$file=cleanID($medians.':'.$file);
+				BibliographyParser::$renderer->internalmedia( $file, $title );
+			} else {
+				BibliographyParser::$renderer->externalmedia( $file, $title );
+			}
+		}
 	}
 
 	public static function printFile() {}

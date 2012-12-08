@@ -37,6 +37,8 @@ $lang['userfind_o_both'] = 'Merge Auth backend and pages list';
 
 $lang['bibns']  = '(Default) namespace for BibTeX files '
                  .'(can be overridden)';
+$lang['medians']= '(Default) namespace for linked media files '
+                 .'(can be overridden)';
 $lang['userns'] = 'Namespace for author pages';
 $lang['tagns']  = 'Namespace for tag links (requires Tag plugin)';
 

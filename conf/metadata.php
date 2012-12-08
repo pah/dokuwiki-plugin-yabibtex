@@ -22,9 +22,10 @@ $meta['userlink'] = array( 'multichoice'
 $meta['userfind'] = array( 'multichoice'
                          , '_choices' => array('users','pages','both') );
 
-$meta['_ns']    = array('fieldset');
-$meta['bibns']  = array('string');
-$meta['userns'] = array('string');
-$meta['tagns']  = array('string');
+$meta['_ns']     = array('fieldset');
+$meta['bibns']   = array('string');
+$meta['medians'] = array('string');
+$meta['userns']  = array('string');
+$meta['tagns']   = array('string');
 
 

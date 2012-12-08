@@ -14,7 +14,8 @@ $conf['filter_raw']    = 'file,users,tags';
 $conf['userlink']   = 'auto';
 $conf['userfind']   = 'users';
 
-$conf['bibns']  = 'bib';
-$conf['userns'] = 'people';
-$conf['tagns']  = 'tags';
+$conf['bibns']   = 'bib';
+$conf['medians'] = $conf['bibns'];
+$conf['userns']  = 'people';
+$conf['tagns']   = 'tags';
 
