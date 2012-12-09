@@ -204,10 +204,14 @@ class Entry {
 		$this->printString('<p>');
 		$this->printEntry();
 		if ($flags['abstract'] && !empty($this->fields['abstract'])) {
-			$this->printString('<a href="#bibtexAbstract_'.$id.'" title="Show abstract" class="bibtexLink folder">Abstract</a>');
+			BibliographyParser::printLink( 'bibtexAbstract_'.$id
+			                             , BibliographyParser::_('abstract')
+			                             , 'local', 'folder' );
 		}
 		if ($flags['bibtex']) {
-			$this->printString('<a href="#bibtexCode_'.$id.'" title="Show BibTeX source" class="bibtexLink folder">BibTeX</a>');
+			BibliographyParser::printLink( 'bibtexCode_'.$id
+			                             , "BibTeX"
+			                             , 'local', 'folder' );
 		}
 		$this->printString('</p>');
 
@@ -252,14 +256,9 @@ class Entry {
 			if ($usecomma) {
 				Entry::printString(', ');
 			}
-			if( $field == 'file') {
-				// local media link
-				BibliographyParser::printMediaLink($entry[$field]
-				    , BibliographyParser::_($field) );
-			} else {
-				Entry::printString('<a class="bibtexLink urlextern" target="_blank" href="'
-				    .$entry[$field].'">'.BibliographyParser::_($field).'</a>');
-			}
+			BibliographyParser::printLink($entry[$field]
+					, BibliographyParser::_($field)
+					, ($field == 'file') ? 'media' : 'link' );
 			$usecomma = false;
 		}
 	}
@@ -738,20 +737,29 @@ class BibliographyParser {
 			BibliographyParser::$renderer->code( $raw, $lang, $filename );
 	}
 
-	public static function printMediaLink( $file, $title=NULL ) {
+	public static function printLink( $dest, $title=NULL, $type='link', $class='' ) {
 		if( !is_null(BibliographyParser::$renderer) ) {
-			if( !preg_match('|^https?://|', $entry[$field] )  ) {
+			if( $type == 'local' ) {
+				BibliographyParser::$renderer->doc.='<span class="bibtexLink">';
+				BibliographyParser::$renderer->doc.='<a href="#'.$dest.'" '
+													.'title="'.$title.'" class="'.$class.'">'.$title.'</a>';
+				BibliographyParser::$renderer->doc.='</span>';
+				return;
+			} 
+			if( !preg_match('|^https?://|', $dest )  ) {
+				$callback='internal'.$type;
 				$medians = BibliographyParser::$conf['medians'];
-				if( substr($file,0,1) != ':' )
-					$file=cleanID($medians.':'.$file);
-				BibliographyParser::$renderer->internalmedia( $file, $title );
+				if( substr($dest,0,1) != ':' )
+					$file=cleanID($medians.':'.$dest);
 			} else {
-				BibliographyParser::$renderer->externalmedia( $file, $title );
+				$callback='external'.$type ;
 			}
+			BibliographyParser::$renderer->doc.='<span class="bibtexLink">';
+			call_user_func( array( BibliographyParser::$renderer, $callback)
+										, $dest, $title );
+			BibliographyParser::$renderer->doc.='</span>';
 		}
-	}
-
-	public static function printFile() {}
+}
 
 	public static function formatUser( $userinfo, $full_name ) {
 

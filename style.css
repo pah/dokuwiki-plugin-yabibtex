@@ -30,12 +30,12 @@ div.bibtexEntry p
   margin-bottom: 1em:
 }
 
-div.bibtexEntry a.bibtexLink:before,
+div.bibtexEntry span.bibtexLink a:before,
 div.bibtexPageSource a:before
 {
   content: "[";
 }
-div.bibtexEntry a.bibtexLink:after,
+div.bibtexEntry span.bibtexLink a:after,
 div.bibtexPageSource a:after
 {
   content: "]";

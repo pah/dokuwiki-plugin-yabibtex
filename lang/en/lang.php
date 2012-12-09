@@ -20,7 +20,7 @@ $lang['pages']   = 'pages';
 
 $lang['url']     = 'URL';
 $lang['doi']     = 'DOI';
-$lang['file']    = '[Download]';
+$lang['file']    = 'Download';
 
 $lang['abstract'] = "Abstract";
 
