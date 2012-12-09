@@ -137,6 +137,10 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       return $this->_create_field_match_creator( $pattern, 'editors' );
     }
 
+    private function _create_field_match_key( $pattern ) {
+      return $this->_create_field_match_generic( 'citation', $pattern );
+    }
+
     private function _create_field_match_generic( $key, $pattern ) {
       return function( $e ) use($key, $pattern) {
         if( is_null($e->$key) ) return false;
