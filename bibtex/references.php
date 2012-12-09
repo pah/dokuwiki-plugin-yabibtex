@@ -752,7 +752,7 @@ class BibliographyParser {
 				$callback='internal'.$type;
 				$medians = BibliographyParser::$conf['medians'];
 				if( substr($dest,0,1) != ':' )
-					$file=cleanID($medians.':'.$dest);
+					$dest=cleanID($medians.':'.$dest);
 			} else {
 				$callback='external'.$type ;
 			}
