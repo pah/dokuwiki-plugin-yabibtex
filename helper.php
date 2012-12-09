@@ -31,6 +31,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     var $sortkey    = '';      // sort key
     var $user_table   = NULL;
     var $author_table = array();
+    var $userlink     = NULL;
 
     /**
      * Constructor gets default preferences and language strings
@@ -70,18 +71,88 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         return $this->entries;
     }
 
+    private function _create_field_match_user( $pattern ){
+      $userlink = $this->getConf('userlink');
+      if( $userlink != 'off' ) {
+        $uinfo = $this->_findUserInfo( $pattern, false );
+        $mae = ($uinfo!==false)
+             ? $this->_create_field_match_creator( $uinfo['name'] )
+             : NULL;
+      }
+      return function($e) use ($pattern,$mae) {
+        if( $e->users !== NULL ) {
+          $unames = explode(' ', $e->users );
+          foreach( $unames as $u ) {
+            if( preg_match('/^\s*(?:(?:([ae]):)?([0-9]+):)?([a-z0-9_-]+)\s*$/i'
+                          , $u, $m ) && ( $pattern == $m[3] ) )
+              return true;
+          }
+        }
+        if( $mae !== NULL )
+          return call_user_func( $mae, $e );
+
+        return false;
+      };
+    }
+
+    private function _create_field_match_users( $pattern ) {
+      return $this->_create_field_match_user( $pattern );
+    }
+
+    private function _create_field_match_creator( $pattern, $kind='any' ) {
+      if( $kind == 'any' ) {
+        $mauthor = $this->_create_field_match_creator( $pattern, 'authors' );
+        $meditor = $this->_create_field_match_creator( $pattern, 'editors' );
+        return function($e) use($mauthor,$meditor) {
+          return ( call_user_func( $mauthor, $e ) !== false )
+              || ( call_user_func( $meditor, $e ) !== false );
+        };
+      }
+
+      return function($e) use ($kind,$pattern) {
+        $list = $e->$kind;
+        if( !$list->isEmpty() ) {
+          foreach( $list->creators as $c ) {
+            if( stripos( (string) $c, $pattern ) !== false )
+              return true;
+          }
+        }
+        return false;
+      };
+    }
+
+    private function _create_field_match_author( $pattern ) {
+      return $this->_create_field_match_creator( $pattern, 'authors' );
+    }
+
+    private function _create_field_match_authors( $pattern ) {
+      return $this->_create_field_match_creator( $pattern, 'authors' );
+    }
+
+    private function _create_field_match_editors( $pattern ) {
+      return $this->_create_field_match_creator( $pattern, 'editors' );
+    }
+
+    private function _create_field_match_editor( $pattern ) {
+      return $this->_create_field_match_creator( $pattern, 'editors' );
+    }
+
+    private function _create_field_match_generic( $key, $pattern ) {
+      return function( $e ) use($key, $pattern) {
+        if( is_null($e->$key) ) return false;
+        return stripos( $e->$key, $pattern ) !== false;
+      };
+    }
+
     private function _createFieldFilter( $key, $pattern ) {
       if( empty($key) )     return NULL;
       if( empty($pattern) ) return NULL;
 
       if( !is_array($pattern) ) {
-        $func = method_exists( $this, '_field_match_'.$key )
-                  ? array( $this, '_field_match_'.$key )
-                  : 'stripos';
-        return function( $e ) use($key,$func,$pattern) {
-          if( is_null($e->$key) ) return false;
-          return call_user_func( $func, $e->$key, $pattern ) !== false;
-        };
+        return method_exists( $this, '_create_field_match_'.$key )
+                  ? call_user_func( array($this, '_create_field_match_'.$key )
+                                  , $pattern )
+                  : $this->_create_field_match_generic( $key, $pattern );
       } else {
         $marray = array();
         foreach( $pattern as $p ) {
@@ -246,7 +317,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $user_table = array_merge( $users_page, $users_auth );
     }
 
-    private function _findUserInfo( $user ) {
+    private function _findUserInfo( $user, $allowempty=true ) {
       global $auth;
       $users  =& $this->user_table;
       $userns =  $this->getConf('userns');
@@ -272,8 +343,12 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $item['name'] = $item['title'];
 
       // fallback
-      if( empty($item['name']) )
-        $item['name'] = $user;
+      if( empty($item['name']) ) {
+        if( $allowempty )
+          $item['name'] = $user;
+        else
+          $item = false;
+      }
 
       // return cached value
       return $users[$user] = $item;
@@ -329,7 +404,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       $overridden = array(); // explicit IDs for authors
 
       if( $entry->users !== NULL ) {
-        $unames = explode(',', $entry->users );
+        $unames = explode(' ', $entry->users );
         foreach( $unames as $u ) {
           if( preg_match('/^\s*(?:(?:([ae]):)?([0-9]+):)?([a-z0-9_-]+)\s*$/i'
                         , $u, $m ) )
@@ -355,7 +430,6 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         if( !$list->isEmpty() ) {
           $i = 1; 
           foreach( $list->creators as $c ) {
-            $name =  (string) $c;
             $this->_findAuthorInfo( $c, $overridden[$l][$i] );
             $i++;
           }
