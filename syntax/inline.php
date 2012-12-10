@@ -2,7 +2,7 @@
 /**
  * DokuWiki Plugin yabibtex (Syntax Component)
  *
- * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
+ * @license GPL 3 http://www.gnu.org/licenses/gpl-3.0.html
  * @author  Philipp A. Hartmann <pah@qo.cx>
  */
 

@@ -1,10 +1,11 @@
 <?php
 /**
 * @file
-* @brief    BibTeX bibliography formatter Joomla plug-in BIB parser
+* @brief    BibTeX bibliography formatter Joomla plug-in BIB parser (adopted for DokuWiki)
 * @author   Levente Hunyadi
-* @version  1.1.1
+* @author   Philipp A. Hartmann <pah@qo.cx>
 * @remarks  Copyright (C) 2009-2011 Levente Hunyadi
+* @remarks  Copyright (C) 2012      Philipp A. Hartmann
 * @remarks  Licensed under GNU/GPLv3, see http://www.gnu.org/licenses/gpl-3.0.html
 * @see      http://hunyadi.info.hu/projects/bibtex
 */
