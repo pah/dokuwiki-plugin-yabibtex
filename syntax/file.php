@@ -18,9 +18,9 @@ require_once DOKU_PLUGIN.'syntax.php';
 
 class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
 {
-     var $helper = false;
+    var $helper = false;
 
-     public function getType() {
+    public function getType() {
         return 'substition';
     }
 
@@ -37,6 +37,19 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
                                      , $mode, 'plugin_yabibtex_file');
     }
 
+    private function _prepareFile( &$file ) {
+      $file = trim($file);
+      $ns   = $this->getConf('bibns');
+      if( substr($file,0,1) != ':' )
+        $file = $this->getConf('bibns').':'.$file;
+      $file = cleanID($file);
+    }
+
+    private function _prepareFiles( $files_str ) {
+      $files = explode(',', $files_str);
+      array_walk( $files, array($this,'_prepareFile') );
+      return array_unique( $files );
+    }
 
     public function handle($match, $state, $pos, &$handler)
     {
@@ -52,7 +65,7 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
         return false;
       }
 
-      $data['file']  = cleanID($this->getConf('bibns').':'.trim($argv[1]));
+      $data['files'] = $this->_prepareFiles($argv[1]);
       $data['flags'] = $this->helper->parseOptions($argv[2]);
 
       return $data;
@@ -63,34 +76,38 @@ class syntax_plugin_yabibtex_file extends DokuWiki_Syntax_Plugin
         if(empty($data)) return false;
 
         if($mode == 'metadata' ) {
-          // add file dependency for caching
-          $renderer->meta['relation']['haspart'][$data['file']]
-            = @file_exists(wikiFN($data['file']));
+          foreach( $data['files'] as $f )
+            // add file dependency for caching
+            $renderer->meta['relation']['haspart'][$f]
+                = @file_exists(wikiFN($f));
         }
 
         if($mode != 'xhtml' && $mode != 'code' ) return false;
 
-        $bt =& plugin_load('helper','yabibtex');
-        if(!$bt) return false;
+        if($this->helper===false)
+          $this->helper =& plugin_load('helper','yabibtex');
+        if(!$this->helper)
+          return false;
 
         if( $mode == 'xhtml' ) {
-          if(!page_exists($data['file'])) {
-            msg( 'BibTeX error: Bibliography not found \''
-               .$data['file'].'\'', -1 );
-            return true;
-          }
+          foreach( $data['files'] as $i => $f )
+            if(!page_exists($f)) {
+              msg( 'BibTeX error: Bibliography not found \''.$f.'\'', -1 );
+              unset( $data['files'][$i] ); 
+            }
         }
 
-        $bt->loadFile(wikiFN($data['file']),$data['flags']['filter']);
-        $bt->sort( $data['flags']['sort']  );
-        $bt->renderBibTeX( $data['flags'], $renderer, $mode );
+        $this->helper->loadFiles($data['files'],$data['flags']['filter']);
+        $this->helper->sort( $data['flags']['sort']  );
+        $this->helper->renderBibTeX( $data['flags'], $renderer, $mode );
 
         if( $mode == 'xhtml' ) {
-          if( auth_quickaclcheck($data['file']) >= ACL_READ ) {
-            $renderer->doc.='<div class="bibtexPageSource">';
-            $renderer->internallink( $data['file'], "BibTeX source" );
-            $renderer->doc.='</div>';
+          $renderer->doc.='<div class="bibtexPageSource">';
+          foreach( $data['files'] as $f )
+            if( auth_quickaclcheck($f) >= ACL_READ ) {
+            $renderer->internallink($f);
           }
+          $renderer->doc.='</div>';
         }
 
         return true;

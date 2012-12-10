@@ -52,10 +52,22 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $this->filter_raw = explode(',', $this->getConf('filter_raw') );
     }
 
-    public function loadFile( $filename, $filter=NULL )
+    public function loadFiles( $filenames, $filter=NULL )
     {
+        if( empty($filenames) ) {
+          $this->entries = array();
+          return false;
+        }
+        if( !is_array($filenames) )
+          $filenames = array( $filenames );
+
+        $bibtex_entries = array();
+        foreach( $filenames as $f ) {
+          $bibtex_local   = BibTexParser::read(wikiFN($f));
+          $bibtex_entries = array_merge( $bibtex_entries, $bibtex_local );
+        }
+
         $filter_func = $this->_createFilter($filter);
-        $bibtex_entries = BibTexParser::read($filename);
         $this->entries  = BibTexParser::parse($bibtex_entries, $filter_func);
         return $this->entries;
     }
@@ -179,8 +191,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       $marray = array();
       foreach( $filter as $f ) {
         if( strpos($f['pattern'],'|') ) {
-          $f['pattern'] = explode('|',$f['pattern']);
-          array_walk( $f['pattern'], 'trim' );
+          $f['pattern'] = array_map('trim', explode('|',$f['pattern']));
         }
         $mf = $this->_createFieldFilter( $f['key'], $f['pattern'] );
         if( $mf!== NULL ) $marray[] = $mf;
