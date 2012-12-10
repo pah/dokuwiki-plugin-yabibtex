@@ -28,10 +28,8 @@ require_once DOKU_INC.'inc/search.php';
 class helper_plugin_yabibtex extends DokuWiki_Plugin
 {
     var $filter_raw = NULL;
-    var $sortkey    = '';      // sort key
     var $user_table   = NULL;
     var $author_table = array();
-    var $userlink     = NULL;
 
     /**
      * Constructor gets default preferences and language strings
@@ -51,7 +49,6 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
         $this->bibns = $this->getConf('bibns');
         if (!$this->bibns) $this->bibns = getNS($ID);
-        $this->sortkey = $this->getConf('sort');
         $this->filter_raw = explode(',', $this->getConf('filter_raw') );
     }
 
@@ -202,7 +199,11 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     public function _version_check(){
       if( $this->has_closures ) return true;
       $php_version = explode( '.', PHP_VERSION );
-      $this->has_closures = ($php_version[0]*10000 + $php_version[1]*100) >= 50300 ; 
+      $this->has_closures = ($php_version[0]*10000
+                             + $php_version[1]*100) >= 50300;
+      if( !$this->has_closures ) 
+        msg('No PHP5 closure support (PHP >= 5.3.0 needed). '
+           .'Sorting+filtering disabled.' -1 );
       return $this->has_closures;
     }
 
@@ -216,7 +217,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         if( empty($o) ) continue;
         if( preg_match( '/^(?i:((no)?([a-z0-9_-]*)))(?:\s*=\s*(.*))?$/',$o,$m )  )
         {
-          if( isset($m[4]) ) // assignment option, store key/
+          if( isset($m[4]) ) // assignment option, store key/value pair
           {
             switch( $m[1] )
             {
