@@ -480,6 +480,9 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $key = substr($key,1);
       }
 
+      if($key=='key')
+        return $this->_create_field_sorter(($asc ? '':'^').'citation');
+
       if($key=='date') {
         $asc = $asc ? '' : '^';
         $y_cmp = $this->_create_field_sorter($asc.'year');
@@ -497,8 +500,9 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $after  = $asc ?  1 : -1;
         $f1 = $a->$key;
         $f2 = $b->$key;
-        if ($f1 == $f2 ) return 0;
-        return ($f1 < $f2) ? $before : $after;
+        $cmp = strcasecmp($f1,$f2);
+        return ( $cmp == 0 )  
+               ? 0 : ($cmp < 0 ? $before : $after);
       };
     }
 
