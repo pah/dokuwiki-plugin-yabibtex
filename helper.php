@@ -236,9 +236,11 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
               if( !$this->_version_check() ) {
                 $m[4] = false;
               }
+            // 
             case 'class':           // set CSS class
             case 'userlink':        // (off|auto|explicit)
-              $flags[$m[1]]=$m[4]; 
+            case 'links':           // (off|keyinline)
+              $flags[$m[1]]=trim($m[4]); 
               break;
             default:
               if( $this->_version_check() ) {
@@ -249,7 +251,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           }
           else // flag option
           {
-            $flags[$m[3]]=($m[2]=='no')?0:1;
+            $flags[$m[3]]=($m[2]=='no')?false:true;
           }
         } else {
           msg('BibTeX: Invalid option syntax ignored: "'.hsc($o).'"',-1);
@@ -530,6 +532,10 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $flags['sort'] =  $this->getConf( 'sort' );
         if( !isset( $flags['rowmarkers'] ) )
           $flags['rowmarkers'] = $this->getConf( 'rowmarkers' );
+        if( !isset( $flags['showkey'] ) )
+          $flags['showkey'] = $this->getConf( 'show_key' );
+        if( !isset( $flags['links'] ) )
+          $flags['links'] = $this->getConf( 'show_links' );
         if( !isset( $flags['bibtex'] ) )
           $flags['bibtex'] = $this->getConf( 'show_bibtex' );
         if( !isset( $flags['abstract'] ) )
@@ -539,6 +545,10 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
 
         if( $flags['abstract']===0 )
           $flags['filter_raw'][] = 'abstract';
+
+        if( $flags['links'] == 'auto' ) {
+          $flags['links'] = $flags['showkey'] ? 'key' : 'inline';
+        }
 
         BibliographyParser::$renderer =& $renderer;
 
@@ -555,17 +565,24 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         else if ($mode == 'xhtml' )
         {
           $renderer->doc.= '<dl class="bibtexList">'.DOKU_LF;
-          $even=0; $oldclass = $flags['class'];
-          if ($flags['rowmarkers'] )
-            $flags['class']=$oldclass.' even';
+          $oldclass = $flags['class'];
           foreach ( $this->entries as $entry) {
-            $renderer->doc.= '<dd class="'.$even.'">';
+            if ($flags['rowmarkers'] ) {
+              $even = (($even=='odd') ? 'even' : 'odd');
+              $flags['class']=$oldclass.' '.$even;
+            }
+            if( $flags['showkey'] ) {
+              $renderer->doc.= '<dt class="bibtexKey '.$even.'">';
+              $renderer->doc.= '<span class="bibtexKey">'.hsc($entry->citation).'</span>';
+              if( $flags['links'] == 'key' ) {
+                $entry->printLinks( $flags );
+              }
+              $renderer->doc.= '</dt>'.DOKU_LF;
+            }
+            $renderer->doc.= '<dd class="bibtexEntry '.$even.'">';
             $this->_findAuthors( $flags['userlink'], $entry );
             $entry->printFormatted( $flags );
             $renderer->doc.= '</dd>'.DOKU_LF;
-            if ($flags['rowmarkers'] )
-              $flags['class'] = $oldclass
-                . (($even=($even+1)%2) ? ' odd' : ' even');
           }
           $renderer->doc.= '</dl>'.DOKU_LF;
         }

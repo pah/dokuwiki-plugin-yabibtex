@@ -1,7 +1,34 @@
 
-dd.bibtexList
-{
-  margin-left: 1em;
+dl.bibtexList dt.bibtexKey {
+  font-weight: normal;
+  margin-top: 0.3em;
+  margin-left: 0.5em;
+  padding: 3px;
+  margin-bottom: -.8em;
+}
+
+dl.bibtexList dd.bibtexEntry {
+  margin-left:  .5em;
+  padding-left: .5em;
+}
+
+dl.bibtexList  span.bibtexKey {
+  font-weight: medium;
+}
+dl.bibtexList dt.bibtexKey span.bibtexKey:before {
+  content: "[";
+}
+dl.bibtexList dt.bibtexKey span.bibtexKey:after {
+  content: "]";
+}
+
+dl.bibtexList dt.even,
+dl.bibtexList dd.even {
+}
+
+dl.bibtexList dt.odd,
+dl.bibtexList dd.odd {
+  background: __background_alt__;
 }
 
 div.bibtexPageSource
@@ -17,24 +44,21 @@ div.bibtexEntry {
   padding: 2px;
 }
 
-div.bibtexEntry.even {
-}
-
-div.bibtexEntry.odd {
-  background: __background_alt__;
-}
-
 div.bibtexEntry p
 {
   margin: 0.5em;
+  margin-top:    0em:
+  padding-top:    0em:
   margin-bottom: 1em:
 }
 
+dt.bibtexKey span.bibtexLink a:before,
 div.bibtexEntry span.bibtexLink a:before,
 div.bibtexPageSource a:before
 {
   content: "[";
 }
+dt.bibtexKey span.bibtexLink a:after,
 div.bibtexEntry span.bibtexLink a:after,
 div.bibtexPageSource a:after
 {

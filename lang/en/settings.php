@@ -15,6 +15,11 @@ $lang['rowmarkers'] = 'Add alternating \'even\'/\'odd\' CSS classes '
                      .'to BibTeX list entries for row highlighting '
                      .'(can be overridden)';
 
+$lang['show_key']   = 'Show citation key';
+
+$lang['show_links']   = 'Show links (can be overridden)';
+
+
 $lang['show_abstract'] = 'Add box with Abstract, if present; '
                         .'foldable, when Folding plugin is available '
                         .'(can be overridden)';

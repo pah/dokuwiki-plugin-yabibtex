@@ -11,6 +11,10 @@ $meta['sort'] = array('string'
 
 
 $meta['rowmarkers']    = array('onoff');
+$meta['show_key']      = array('onoff');
+$meta['show_links']    = array( 'multichoice'
+                              , '_choices' => array('off','key','inline', 'auto') );
+
 $meta['show_abstract'] = array('onoff');
 $meta['show_bibtex']   = array('onoff');
 $meta['filter_raw']    = array( 'multicheckbox'
