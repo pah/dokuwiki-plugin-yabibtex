@@ -194,6 +194,29 @@ class Entry {
 		$this->editors->addList($editors);
 	}
 	
+	public function printLinks($flags)
+	{
+		$e =& $this->fields;
+
+		$key = preg_replace('/[^A-Za-z0-9_-]/', '_', $this->citation);
+		$id  = get_class($this).'-'.$key;
+
+		$this->_printLink($e,'file');
+		$this->_printLink($e,'url');
+		$this->_printLink($e,'doi');
+
+		if ($flags['abstract'] && !empty($this->fields['abstract'])) {
+			BibliographyParser::printLink( 'bibtexAbstract_'.$id
+			                             , BibliographyParser::_('abstract')
+			                             , 'local', 'folder' );
+		}
+		if ($flags['bibtex']) {
+			BibliographyParser::printLink( 'bibtexCode_'.$id
+			                             , "BibTeX"
+			                             , 'local', 'folder' );
+		}
+	}
+
 	/**
 	* Produces a formatted bibliography entry for HTML output.
 	* @return A human-readable bibliography reference.
@@ -205,16 +228,8 @@ class Entry {
 		$this->printString('<div class="bibtexEntry '.hsc($flags['class']).'" id="'.$id.'">' );
 		$this->printString('<p>');
 		$this->printEntry();
-		if ($flags['abstract'] && !empty($this->fields['abstract'])) {
-			BibliographyParser::printLink( 'bibtexAbstract_'.$id
-			                             , BibliographyParser::_('abstract')
-			                             , 'local', 'folder' );
-		}
-		if ($flags['bibtex']) {
-			BibliographyParser::printLink( 'bibtexCode_'.$id
-			                             , "BibTeX"
-			                             , 'local', 'folder' );
-		}
+		if( $flags['links'] == 'inline' )
+			$this->printLinks($flags);
 		$this->printString('</p>');
 
 		if ($flags['abstract'])
@@ -249,14 +264,12 @@ class Entry {
 		return true;
 	}
 
-	protected static function printLink($entry,$field,&$usecomma) {
+	protected static function _printLink($entry,$field,&$usecomma) {
 		if (isset($entry[$field])) {
 			if( $field == 'doi' && !preg_match('|^https?://|', $entry[$field]) ) {
 				$entry[$field] = 'http://dx.doi.org/'.$entry[$field];
 			}
-			if ($usecomma) {
-				Entry::printString(', ');
-			}
+			Entry::printString(' ');
 			BibliographyParser::printLink($entry[$field]
 					, BibliographyParser::_($field)
 					, ($field == 'file') ? 'media' : 'link' );
@@ -420,9 +433,6 @@ class ArticleEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -443,9 +453,6 @@ class BookEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -461,9 +468,6 @@ class BookletEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -492,9 +496,6 @@ class InBookEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -519,9 +520,6 @@ class InCollectionEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -554,9 +552,6 @@ class ProceedingsPaperEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -573,9 +568,6 @@ class ManualEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -592,9 +584,6 @@ class ThesisEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -613,9 +602,6 @@ class MiscellaneousEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -641,9 +627,6 @@ class ProceedingsEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -669,9 +652,6 @@ class TechnicalReportEntry extends Entry {
 		$this->printDot($usecomma);
 		$this->printField($e, 'note', $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
@@ -684,9 +664,6 @@ class UnpublishedEntry extends Entry {
 		$this->printField($e, 'note', $usecomma);
 		$this->printDate($e, $usecomma);
 		$this->printDot($usecomma);
-		$this->printLink($e,'file',$usecomma);
-		$this->printLink($e,'url',$usecomma);
-		$this->printLink($e,'doi',$usecomma);
 	}
 }
 
