@@ -527,7 +527,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
                                 , $mode='xhtml' )
     {
         if( empty($this->entries) )
-          return NULL;
+          return false;
 
         $temp_render = false;
         if( $renderer === NULL ) {
@@ -569,11 +569,11 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
             $bibfilename = preg_replace( '/[^A-Za-z0-9_-]/', '_'
                                        , trim($entry->citation) ).'.bib';
             BibliographyParser::printCode(
-              $entry->getRaw($flags['filter_raw']),$bibfilename
+              $entry->getRaw($flags['filter_raw']), $bibfilename
             );
           }
         }
-        else if ($mode == 'xhtml' )
+        else if ($mode == 'xhtml')
         {
           $renderer->doc.= '<dl class="bibtexList">'.DOKU_LF;
           $oldclass = $flags['class'];
