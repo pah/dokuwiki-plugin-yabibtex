@@ -538,6 +538,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $flags['rowmarkers'] = $this->getConf( 'rowmarkers' );
         if( !isset( $flags['showkey'] ) )
           $flags['showkey'] = $this->getConf( 'show_key' );
+        if( !isset( $flags['showtype'] ) )
+          $flags['showtype'] = $this->getConf( 'show_type' );
         if( !isset( $flags['links'] ) )
           $flags['links'] = $this->getConf( 'show_links' );
         if( !isset( $flags['bibtex'] ) )
@@ -551,7 +553,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $flags['filter_raw'][] = 'abstract';
 
         if( $flags['links'] == 'auto' ) {
-          $flags['links'] = $flags['showkey'] ? 'key' : 'inline';
+          $flags['links'] = ( $flags['showkey'] || $flags['showtype'] )
+                            ? 'key' : 'inline';
         }
 
         BibliographyParser::$renderer =& $renderer;
@@ -575,9 +578,20 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
               $even = (($even=='odd') ? 'even' : 'odd');
               $flags['class']=$oldclass.' '.$even;
             }
-            if( $flags['showkey'] ) {
-              $renderer->doc.= '<dt class="bibtexKey '.$even.'">';
-              $renderer->doc.= '<span class="bibtexKey">'.hsc($entry->citation).'</span>';
+            if( $flags['showkey'] || $flags['showtype'] ) {
+              $renderer->doc.= '<dt class="bibtexKey '.$even.'"><ul>';
+              if($flags['showkey']) {
+                $renderer->doc.='<li class="bibtexKey">'
+                               .hsc($entry->citation)
+                               .'</li>';
+              }
+              if($flags['showtype']) {
+                $renderer->doc.='<li class="bibtexType">'
+                               .hsc($entry->entry_type)
+                               .'</li>';
+              }
+              $renderer->doc.= '</ul>'.DOKU_LF;
+
               if( $flags['links'] == 'key' ) {
                 $entry->printLinks( $flags );
               }

@@ -16,6 +16,7 @@ $lang['rowmarkers'] = 'Add alternating \'even\'/\'odd\' CSS classes '
                      .'(can be overridden)';
 
 $lang['show_key']   = 'Show citation key';
+$lang['show_type']  = 'Show citation entry type';
 
 $lang['show_links']   = 'Show links (can be overridden)';
 

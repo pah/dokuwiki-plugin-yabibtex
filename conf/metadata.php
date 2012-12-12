@@ -12,6 +12,7 @@ $meta['sort'] = array('string'
 
 $meta['rowmarkers']    = array('onoff');
 $meta['show_key']      = array('onoff');
+$meta['show_type']     = array('onoff');
 $meta['show_links']    = array( 'multichoice'
                               , '_choices' => array('off','key','inline', 'auto') );
 
