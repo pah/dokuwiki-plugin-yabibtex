@@ -582,8 +582,12 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
               $even = (($even=='odd') ? 'even' : 'odd');
               $flags['class']=$oldclass.' '.$even;
             }
-            if( $flags['showkey'] || $flags['showtype'] ) {
-              $renderer->doc.= '<dt class="bibtexKey '.$even.'"><ul>';
+            if( $flags['showkey'] || $flags['showtype']
+                || $flags['links']=='key')
+            {
+              $renderer->doc.= '<dt class="bibtexKey '.$even.'">';
+              if( $flags['showkey'] || $flags['showtype'] )
+                $renderer->doc.= '<ul>';
               if($flags['showkey']) {
                 $renderer->doc.='<li class="bibtexKey">'
                                .hsc($entry->citation)
@@ -594,7 +598,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
                                .hsc($entry->entry_type)
                                .'</li>';
               }
-              $renderer->doc.= '</ul>'.DOKU_LF;
+              if( $flags['showkey'] || $flags['showtype'] )
+                $renderer->doc.= '</ul>'.DOKU_LF;
 
               if( $flags['links'] == 'key' ) {
                 $entry->printLinks( $flags );
