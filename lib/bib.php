@@ -88,9 +88,6 @@ class BibTexParser extends BibliographyParser {
 			$entry->citation   = trim($bibtex_entry['bibtexCitation']);
 			$entry->entry_type = $bibtex_entry['bibtexEntryType'];
 
-			BibTexParser::filterRaw( $bibtex_entry );
-			$entry->raw_fields = $bibtex_entry;
-
 			// unescape special LaTeX characters
 			foreach ($bibtex_entry as $key => $value) {
 				if (ctype_alpha($key[0]) && ctype_alnum($key)) {  // ensure valid PHP property name
@@ -112,9 +109,13 @@ class BibTexParser extends BibliographyParser {
 				$month = get_month_standard_number( $bibtex_entry['month'] );
 				if( $month !== false ) {
 					$entry->month=$month;
-					$entry->raw_fields['month'] = $month;
+					$bibtex_entry['month'] = $month;
 				}
 			}
+
+			// store raw fields for export
+			BibTexParser::filterRaw( $bibtex_entry );
+			$entry->raw_fields = $bibtex_entry;
 
 			// skip, if filter does not match
 			if( is_callable($filter) && call_user_func( $filter, $entry ) === false )

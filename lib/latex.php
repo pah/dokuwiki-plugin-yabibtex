@@ -335,36 +335,36 @@ function get_ordinal_standard_name($field) {
 
 function get_month_standard_number($field) {
 	$month_standard_full_names = array(
-		'January'=>1,
-		'February'=>2,
-		'March'=>3,
-		'April'=>4,
-		'May'=>5,
-		'June'=>6,
-		'July'=>7,
-		'August'=>8 ,
-		'September'=>9,
-		'October'=>10,
-		'November'=>11,
-		'December'=>12
+		'January'  =>'01',
+		'February' =>'02',
+		'March'    =>'03',
+		'April'    =>'04',
+		'May'      =>'05',
+		'June'     =>'06',
+		'July'     =>'07',
+		'August'   =>'08',
+		'September'=>'09',
+		'October'  =>'10',
+		'November' =>'11',
+		'December' =>'12'
 	);
 	$month_standard_short_names = array(
-		'Jan'=>1 ,
-		'Feb'=>2 ,
-		'Mar'=>3 ,
-		'Apr'=>4 ,
-		'May'=>5 ,
-		'Jun'=>6 ,
-		'Jul'=>7 ,
-		'Aug'=>8 ,
-		'Sep'=>9 ,
-		'Oct'=>10,
-		'Nov'=>11,
-		'Dec'=>12
+		'Jan'=>'01',
+		'Feb'=>'02',
+		'Mar'=>'03',
+		'Apr'=>'04',
+		'May'=>'05',
+		'Jun'=>'06',
+		'Jul'=>'07',
+		'Aug'=>'08',
+		'Sep'=>'09',
+		'Oct'=>'10',
+		'Nov'=>'11',
+		'Dec'=>'12'
 	);
 
 	if((is_int($field) || ctype_digit($field)) && $field>0 && $field<13 )
-		return (int)$field;
+		return ((int)$field<10) ? '0'.((int)$field) : (string)$field;
 
 	$field = ucfirst(strtolower($field));
 
