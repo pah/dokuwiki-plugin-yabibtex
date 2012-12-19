@@ -52,6 +52,35 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $this->filter_raw = explode(',', $this->getConf('filter_raw') );
     }
 
+    public function _version_check(){
+      if( $this->has_closures ) return true;
+      $php_version = explode( '.', PHP_VERSION );
+      $this->has_closures = ($php_version[0]*10000
+                             + $php_version[1]*100) >= 50300;
+      if( !$this->has_closures )
+        msg('No PHP5 closure support (PHP >= 5.3.0 needed). '
+           .'Sorting+filtering disabled.' -1 );
+      return $this->has_closures;
+    }
+
+    private function _require_filter_sort() {
+      if($this->_version_check()) {
+        require_once( DOKU_PLUGIN_YABIBTEX.'lib/filter_sort.php' );
+        return true;
+      }
+      return false;
+    }
+
+    private function _createFilter( $filter ) {
+
+      if( !is_array($filter) || count($filter) == 0 )
+        return NULL;
+      if( !$this->_require_filter_sort() )
+        return NULL;
+
+      return yabibtex_create_filter($this,$filter);
+    }
+
     public function loadFiles( $filenames, $filter=NULL )
     {
         if( empty($filenames) ) {
@@ -78,148 +107,6 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $bibtex_entries = BibTexParser::readString($string);
         $this->entries  = BibTexParser::parse($bibtex_entries, $filter_func);
         return $this->entries;
-    }
-
-    private function _create_field_match_user( $pattern ){
-      $userlink = $this->getConf('userlink');
-      if( $userlink != 'off' ) {
-        $uinfo = $this->_findUserInfo( $pattern, false );
-        $mae = ($uinfo!==false)
-             ? $this->_create_field_match_creator( $uinfo['name'] )
-             : NULL;
-      }
-      return function($e) use ($pattern,$mae) {
-        if( $e->users !== NULL ) {
-          $unames = explode(' ', $e->users );
-          foreach( $unames as $u ) {
-            if( preg_match('/^\s*(?:(?:([ae]):)?([0-9]+):)?([a-z0-9_-]+)\s*$/i'
-                          , $u, $m ) && ( $pattern == $m[3] ) )
-              return true;
-          }
-        }
-        if( $mae !== NULL )
-          return call_user_func( $mae, $e );
-
-        return false;
-      };
-    }
-
-    private function _create_field_match_users( $pattern ) {
-      return $this->_create_field_match_user( $pattern );
-    }
-
-    private function _create_field_match_creator( $pattern, $kind='any' ) {
-      if( $kind == 'any' ) {
-        $mauthor = $this->_create_field_match_creator( $pattern, 'authors' );
-        $meditor = $this->_create_field_match_creator( $pattern, 'editors' );
-        return function($e) use($mauthor,$meditor) {
-          return ( call_user_func( $mauthor, $e ) !== false )
-              || ( call_user_func( $meditor, $e ) !== false );
-        };
-      }
-
-      return function($e) use ($kind,$pattern) {
-        $list = $e->$kind;
-        if( !$list->isEmpty() ) {
-          foreach( $list->creators as $c ) {
-            if( stripos( (string) $c, $pattern ) !== false )
-              return true;
-          }
-        }
-        return false;
-      };
-    }
-
-    private function _create_field_match_author( $pattern ) {
-      return $this->_create_field_match_creator( $pattern, 'authors' );
-    }
-
-    private function _create_field_match_authors( $pattern ) {
-      return $this->_create_field_match_creator( $pattern, 'authors' );
-    }
-
-    private function _create_field_match_editors( $pattern ) {
-      return $this->_create_field_match_creator( $pattern, 'editors' );
-    }
-
-    private function _create_field_match_editor( $pattern ) {
-      return $this->_create_field_match_creator( $pattern, 'editors' );
-    }
-
-    private function _create_field_match_key( $pattern ) {
-      return $this->_create_field_match_generic( 'citation', $pattern );
-    }
-
-    private function _create_field_match_type( $pattern ) {
-      return $this->_create_field_match_generic( 'entry_type', $pattern );
-    }
-
-    private function _create_field_match_generic( $key, $pattern ) {
-      return function( $e ) use($key, $pattern) {
-        if( is_null($e->$key) ) return false;
-        return stripos( $e->$key, $pattern ) !== false;
-      };
-    }
-
-    private function _createFieldFilter( $key, $pattern ) {
-      if( empty($key) )     return NULL;
-      if( empty($pattern) ) return NULL;
-
-      if( !is_array($pattern) ) {
-        return method_exists( $this, '_create_field_match_'.$key )
-                  ? call_user_func( array($this, '_create_field_match_'.$key )
-                                  , $pattern )
-                  : $this->_create_field_match_generic( $key, $pattern );
-      } else {
-        $marray = array();
-        foreach( $pattern as $p ) {
-          $mf = $this->_createFieldFilter($key,$p);
-          if( $mf!== NULL ) $marray[] = $mf;
-        }
-        // disjunction of all applied sub-filters
-        return function( $e ) use($marray) {
-          foreach( $marray as $m ) {
-            if( call_user_func( $m, $e ) !== false )
-              return true;
-          }
-          return false;
-        };
-      }
-    }
-
-    private function _createFilter( $filter ) {
-
-      if( !is_array($filter) || count($filter) == 0 )
-        return NULL;
-
-      $marray = array();
-      foreach( $filter as $f ) {
-        if( strpos($f['pattern'],'|') ) {
-          $f['pattern'] = array_map('trim', explode('|',$f['pattern']));
-        }
-        $mf = $this->_createFieldFilter( $f['key'], $f['pattern'] );
-        if( $mf!== NULL ) $marray[] = $mf;
-      }
-
-      // conjunction of all applied filters
-      return function( $e ) use($marray) {
-          foreach( $marray as $m ) {
-            if( call_user_func( $m, $e ) === false )
-              return false;
-          }
-          return true;
-        };
-    }
-
-    public function _version_check(){
-      if( $this->has_closures ) return true;
-      $php_version = explode( '.', PHP_VERSION );
-      $this->has_closures = ($php_version[0]*10000
-                             + $php_version[1]*100) >= 50300;
-      if( !$this->has_closures ) 
-        msg('No PHP5 closure support (PHP >= 5.3.0 needed). '
-           .'Sorting+filtering disabled.' -1 );
-      return $this->has_closures;
     }
 
     public function parseOptions( $opts ) {
@@ -339,7 +226,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $user_table = array_merge( $users_page, $users_auth );
     }
 
-    private function _findUserInfo( $user, $allowempty=true ) {
+    public function _findUserInfo( $user, $allowempty=true ) {
       global $auth;
       $users  =& $this->user_table;
       $userns =  $this->getConf('userns');
@@ -460,63 +347,15 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
       }
     }
 
-    function _create_field_sorter($keys)
-    {
-      $keyarray = explode(',',$keys);
-      if( count($keyarray) > 1) {
-        foreach( $keyarray as $key ) {
-          $cmparray[]=$this->_create_field_sorter($key);
-        }
-        return function( $a, $b ) use($cmparray) {
-          foreach( $cmparray as $cmp ) {
-            $result=call_user_func( $cmp, $a, $b );
-            if( $result!=0 )
-              return $result;
-          }
-          return 0;
-        };
-      }
-
-      $asc=true;
-      $key = trim($keyarray[0]);
-      if( substr($key,0,1) == '^' ) {
-        $asc = false;
-        $key = substr($key,1);
-      }
-
-      if($key=='key')
-        return $this->_create_field_sorter(($asc ? '':'^').'citation');
-
-      if($key=='date') {
-        $asc = $asc ? '' : '^';
-        $y_cmp = $this->_create_field_sorter($asc.'year');
-        $m_cmp = $this->_create_field_sorter($asc.'month');
-        return function( $a, $b) use ($y_cmp,$m_cmp) {
-          $y = call_user_func($y_cmp,$a,$b);
-          if($y==0)
-            return call_user_func($m_cmp,$a,$b);
-          return $y;
-        };
-      }
-
-      return function($a, $b) use ($key,$asc) {
-        $before = $asc ? -1 :  1;
-        $after  = $asc ?  1 : -1;
-        $f1 = $a->$key;
-        $f2 = $b->$key;
-        $cmp = strcasecmp($f1,$f2);
-        return ( $cmp == 0 )  
-               ? 0 : ($cmp < 0 ? $before : $after);
-      };
-    }
-
     function sort( $keys ) {
-       if( empty($this->entries) )
-         return true;
-       if(empty($keys))
-        return true;
+        if( empty($this->entries) )
+          return true;
+        if(empty($keys))
+          return true;
+        if(!$this->_require_filter_sort())
+          return false;
 
-       return usort( $this->entries, $this->_create_field_sorter($keys) );
+        return usort( $this->entries, yabibtex_create_field_sorter($keys) );
     }
 
     /**
