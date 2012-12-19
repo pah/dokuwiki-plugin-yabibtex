@@ -187,19 +187,14 @@ function yabibtex_create_field_sorter($keys)
     $key = substr($key,1);
   }
 
-  if($key=='key')
-    return yabibtex_create_field_sorter(($asc ? '':'^').'citation');
+  if($key=='key') {
+    $asc = $asc ? '' : '^';
+    return yabibtex_create_field_sorter($asc.'citation');
+  }
 
   if($key=='date') {
     $asc = $asc ? '' : '^';
-    $y_cmp = yabibtex_create_field_sorter($asc.'year');
-    $m_cmp = yabibtex_create_field_sorter($asc.'month');
-    return function( $a, $b) use ($y_cmp,$m_cmp) {
-      $y = call_user_func($y_cmp,$a,$b);
-      if($y==0)
-        return call_user_func($m_cmp,$a,$b);
-      return $y;
-    };
+    return yabibtex_create_field_sorter( $asc.'year,'.$asc.'month' );
   }
 
   return function($a, $b) use ($key,$asc) {
