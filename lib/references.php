@@ -264,7 +264,7 @@ class Entry {
 		return true;
 	}
 
-	protected static function _printLink($entry,$field,&$usecomma) {
+	protected static function _printLink($entry,$field,&$usecomma=false) {
 		if (isset($entry[$field])) {
 			if( $field == 'doi' && !preg_match('|^https?://|', $entry[$field]) ) {
 				$entry[$field] = 'http://dx.doi.org/'.$entry[$field];
