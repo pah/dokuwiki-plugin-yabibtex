@@ -52,14 +52,14 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
         $this->filter_raw = explode(',', $this->getConf('filter_raw') );
     }
 
-    public function _version_check(){
+    public function _version_check( $msg=true ){
       if( $this->has_closures ) return true;
       $php_version = explode( '.', PHP_VERSION );
       $this->has_closures = ($php_version[0]*10000
                              + $php_version[1]*100) >= 50300;
-      if( !$this->has_closures )
-        msg('No PHP5 closure support (PHP >= 5.3.0 needed). '
-           .'Sorting+filtering disabled.' -1 );
+      if( !$this->has_closures && $msg)
+        msg('BibTeX error: No PHP5 closure support (PHP >= 5.3.0 needed). '
+           .'Sorting+filtering disabled.', -1 );
       return $this->has_closures;
     }
 
@@ -375,7 +375,7 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
           $renderer->reset();
         }
 
-        if( !isset( $flags['sort']) && $this->_version_check() )
+        if( !isset( $flags['sort']) && $this->_version_check(false) )
           $flags['sort'] =  $this->getConf( 'sort' );
         if( !isset( $flags['rowmarkers'] ) )
           $flags['rowmarkers'] = $this->getConf( 'rowmarkers' );
