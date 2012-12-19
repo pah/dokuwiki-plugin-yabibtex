@@ -13,8 +13,8 @@
 // no direct access
 defined( 'DOKU_PLUGIN_YABIBTEX' ) or die( 'Restricted access' );
 
-require_once DOKU_PLUGIN_YABIBTEX.'bibtex/bib/parseentries.php';
-require_once DOKU_PLUGIN_YABIBTEX.'bibtex/bib/parsecreators.php';
+require_once DOKU_PLUGIN_YABIBTEX.'lib/bib/parseentries.php';
+require_once DOKU_PLUGIN_YABIBTEX.'lib/bib/parsecreators.php';
 
 /**
 * Parses a bibliography in BibTeX format.

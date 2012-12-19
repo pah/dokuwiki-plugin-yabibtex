@@ -14,7 +14,7 @@
 // no direct access
 defined( 'DOKU_PLUGIN_YABIBTEX' ) or die( 'Restricted access' );
 
-require_once DOKU_PLUGIN_YABIBTEX.'bibtex/latex.php';
+require_once DOKU_PLUGIN_YABIBTEX.'lib/latex.php';
 
 /**
 * Creator (i.e. author or editor) of a piece in a bibliography entry.

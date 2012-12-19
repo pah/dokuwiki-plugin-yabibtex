@@ -37,8 +37,8 @@ class helper_plugin_yabibtex extends DokuWiki_Plugin
     function helper_plugin_yabibtex() {
         global $ID;
 
-        require_once(DOKU_PLUGIN_YABIBTEX.'bibtex/references.php');
-        require_once(DOKU_PLUGIN_YABIBTEX.'bibtex/bib.php');
+        require_once(DOKU_PLUGIN_YABIBTEX.'lib/references.php');
+        require_once(DOKU_PLUGIN_YABIBTEX.'lib/bib.php');
         $this->setupLocale();
         $this->loadConfig();
 
