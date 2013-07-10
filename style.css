@@ -21,6 +21,7 @@ dl.bibtexList dd.bibtexEntry {
 }
 
 dl.bibtexList  dt.bibtexKey ul {
+  color: __text_alt__;
   font-size: smaller;
   display: inline;
 }
