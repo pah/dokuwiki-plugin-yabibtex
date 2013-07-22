@@ -20,5 +20,3 @@ $conf['userfind']   = 'users';
 $conf['bibns']   = 'bib';
 $conf['medians'] = $conf['bibns'];
 $conf['userns']  = 'people';
-$conf['tagns']   = 'tags';
-

@@ -31,6 +31,3 @@ $meta['_ns']     = array('fieldset');
 $meta['bibns']   = array('string');
 $meta['medians'] = array('string');
 $meta['userns']  = array('string');
-$meta['tagns']   = array('string');
-
-

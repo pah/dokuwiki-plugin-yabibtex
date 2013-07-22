@@ -46,6 +46,5 @@ $lang['bibns']  = '(Default) namespace for BibTeX files '
 $lang['medians']= '(Default) namespace for linked media files '
                  .'(can be overridden)';
 $lang['userns'] = 'Namespace for author pages';
-$lang['tagns']  = 'Namespace for tag links (requires Tag plugin)';
 
 //Setup VIM: ex: et ts=4 :
