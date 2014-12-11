@@ -1,6 +1,6 @@
 yabibtex Plugin for DokuWiki
 
-An alternative BibTeX plugin for DokuWiki
+Yet Another BibTeX plugin for DokuWiki
 
 All documentation for this plugin can be found at
 http://www.dokuwiki.org/plugin:yabibtex
@@ -12,16 +12,24 @@ will not work!
 Please refer to http://www.dokuwiki.org/plugins for additional info
 on how to install plugins in DokuWiki.
 
+The BibTeX handling in this plugin (see lib/ subdirectory) has been
+ported from the Joomla! BibTeX plugin [1] to DokuWiki.  The DokuWiki
+integration as well as the extended filtering and sorting options are
+unique to this package.
+
+[1] http://hunyadi.info.hu/projects/bibtex
+
 ----
-Copyright (C) Philipp A. Hartmann <pah@qo.cx>
+Copyright (C) 2012-2014 Philipp A. Hartmann <pah@qo.cx>
+Copyright (C) 2009-2011 Levente Hunyadi
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; version 2 of the License
+the Free Software Foundation; version 3 of the License
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-See the COPYING file in your DokuWiki folder for details
+See the http://www.gnu.org/licenses/gpl-3.0.html for details.
